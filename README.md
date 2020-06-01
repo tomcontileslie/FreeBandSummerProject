@@ -13,3 +13,4 @@ in a Free Idempotent Semigroup"* by Jakub Radoszewski and Wojciech Rytter
 - [ ] Implement the algorithm
   - [ ] Prototype in python
   - [ ] Implement in GAP for tests
+  - [ ] Implement in C++ for libsemigroups
