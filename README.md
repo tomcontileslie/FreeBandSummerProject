@@ -12,3 +12,4 @@ in a Free Idempotent Semigroup"* by Jakub Radoszewski and Wojciech Rytter
   - [ ] Explain this to James
 - [ ] Implement the algorithm
   - [ ] Prototype in python
+  - [ ] Implement in GAP for tests
