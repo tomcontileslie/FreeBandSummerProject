@@ -11,3 +11,4 @@ in a Free Idempotent Semigroup"* by Jakub Radoszewski and Wojciech Rytter
   - [ ] Produce interval automaton (Fig 1. in paper)
   - [ ] Explain this to James
 - [ ] Implement the algorithm
+  - [ ] Prototype in python
