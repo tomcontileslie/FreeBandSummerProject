@@ -6,6 +6,12 @@ Notes:
 - We will assign band elements to tuples (k, i, j) which indicate:
   "element (i,j) of rectangular band number k"
 - I think this is O(n^2) which is really not too bad.
+- storing the MAP variable is heavy on space, O(n^2) in the worst case. But since for any i<=j
+  in the semilattice, the map that sends elements of Q[i] to its pair of transformations
+  on Q[j] is a homomorphism, we can probably just store the actions of a set of generators
+  for Q[i] and then deduce the rest, which would make the storage of MAP O(n).
+- It may be that a lot of the functions in the first half can be sped up using already
+  existing functions.
 
 Input: a (FINITE) band B.
 
@@ -16,6 +22,9 @@ Algorithm:
 
 Q := B/J (J being the J-relation of B); # (use existing GAP functions to compute the quotient)
 N := size(Q);
+S := Semilattice relation of B/J; # use existing GAP functions
+# ideally we want S to do something like: given i, j <= N, S(i,j) returns True
+# if and only if i>=j in the semilattice. WE WILL ASSUME THIS IS EXACTLY WHAT S DOES
 
 C := list of length N, for now empty;  #this will store the dimensions of the bands
 X := function from B to tuples of natural numbers;
@@ -64,3 +73,14 @@ For each i = 1, ..., N:
 # now every element of B should map to a 3-tuple telling you what rectangular band to
 # look in, and then the coordinates of the specific element.
 Y := Inverse(X); # X should be a bijection
+
+
+# armed with:
+# - the quotient semilattice Q, of size N
+# - bijections X, Y
+# - the list C of dimensions of each semilattice element
+# - the semilattice structure function S
+# we can now proceed to find the transformations induced on Q[j] by all elements
+# of any Q[i] where S(i,j)=True.
+
+MAP := NxN matrix (list of lists?), currently empty;    
