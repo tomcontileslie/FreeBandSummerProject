@@ -1,0 +1,66 @@
+PSEUDOCODE SKETCH FOR BAND DECOMPOSITION ALGORITHM
+
+Notes:
+- Assume that Q (the quotient) can be given by GAP in some form indexed from 1 to N.
+- Indexing starts at 1 in this.
+- We will assign band elements to tuples (k, i, j) which indicate:
+  "element (i,j) of rectangular band number k"
+- I think this is O(n^2) which is really not too bad.
+
+Input: a (FINITE) band B.
+
+Algorithm:
+
+## This first section establishes a bijection between B and the elements of the N 
+## rectangular bands.
+
+Q := B/J (J being the J-relation of B); # (use existing GAP functions to compute the quotient)
+N := size(Q);
+
+C := list of length N, for now empty;  #this will store the dimensions of the bands
+X := function from B to tuples of natural numbers;
+# the aim is for X to be a bijection. We will fill it in progressively
+
+# we're going to work through the rectangular bands one by one.
+For each i = 1, ..., N:
+    R := Q[N]; # R is set to be the Nth rectangular band.
+    A := R[1]; # we just need to pick SOME element of R, whichever way is easiest
+    I := RA;
+    L := AR;
+
+    # we now have I,L, our two index sets for the rectangular band R.
+    # (see page 8 of Howie).
+    # let's first save the dimensions of our band to our list C, for reference.
+    IS = size(I);
+    LS = size(L);
+    C[i] := (IS, LS);
+
+    # the elements in I,L are elements of B and we will assign them to (i,1) and (1,j)
+    # respectively.
+    X(A) := (N, 1, 1); # our chosen element A is in both I and L so we set it to be the
+    # top left corner
+    
+    # TODO: create different procedure for corner cases IS=1, LS=1
+    # now save the rest of the I and L elements
+    index = 2;
+    For each I1 in I, except A:
+        X(I1) := (N, index, 1);
+        index += 1;
+    
+    index = 2;
+    For each L1 in L, except A:
+        X(L1) := (N, 1, index);
+        index += 1;
+
+    # we now have the top row and left column of the rectangular band assigned.
+    # if we now consider all products of elements in I and elements in L, we get
+    # the full rectangular band.
+
+    for 2 <= x <= IS, and 2 <= y <= LS:
+        K1 := Inverse of (N, x, 1) under X; # should pull back to a unique element of I
+        K2 := Inverse of (N, 1, y) under X;
+        X(K1*K2) := (N, x, y);
+
+# now every element of B should map to a 3-tuple telling you what rectangular band to
+# look in, and then the coordinates of the specific element.
+Y := Inverse(X); # X should be a bijection
