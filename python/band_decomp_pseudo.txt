@@ -1,0 +1,144 @@
+PSEUDOCODE SKETCH FOR BAND DECOMPOSITION ALGORITHM
+
+Notes:
+- Assume that Q (the quotient) can be given by GAP in some form indexed from 1 to N.
+- Indexing starts at 1 in this.
+- We will assign band elements to tuples (k, i, j) which indicate:
+  "element (i,j) of rectangular band number k"
+- I think this is O(n^2) which is really not too bad.
+- storing the MAP variable is heavy on space, O(n^2) in the worst case. But since for any i<=j
+  in the semilattice, the map that sends elements of Q[i] to its pair of transformations
+  on Q[j] is a homomorphism, we can probably just store the actions of a set of generators
+  for Q[i] and then deduce the rest, which would make the storage of MAP O(n).
+- It may be that a lot of the functions in the first half can be sped up using already
+  existing functions.
+
+Input: a (FINITE) band B.
+
+Algorithm:
+
+## This first section establishes a bijection between B and the elements of the N 
+## rectangular bands.
+
+Q := B/J (J being the J-relation of B); # (use existing GAP functions to compute the quotient)
+N := size(Q);
+S := Semilattice relation of B/J; # use existing GAP functions
+# ideally we want S to do something like: given i, j <= N, S(i,j) returns True
+# if and only if i>=j in the semilattice. WE WILL ASSUME THIS IS EXACTLY WHAT S DOES
+
+C := list of length N, for now empty;  #this will store the dimensions of the bands
+X := function from B to tuples of natural numbers;
+# the aim is for X to be a bijection. We will fill it in progressively
+
+# we're going to work through the rectangular bands one by one.
+For each i = 1, ..., N:
+    R := Q[N]; # R is set to be the Nth rectangular band.
+    A := R[1]; # we just need to pick SOME element of R, whichever way is easiest
+    I := RA;
+    L := AR;
+
+    # we now have I,L, our two index sets for the rectangular band R.
+    # (see page 8 of Howie).
+    # let's first save the dimensions of our band to our list C, for reference.
+    IS = size(I);
+    LS = size(L);
+    C[i] := (IS, LS);
+
+    # the elements in I,L are elements of B and we will assign them to (i,1) and (1,j)
+    # respectively.
+    X(A) := (N, 1, 1); # our chosen element A is in both I and L so we set it to be the
+    # top left corner
+    
+    # TODO: create different procedure for corner cases IS=1, LS=1
+    # now save the rest of the I and L elements
+    index = 2;
+    For each I1 in I, except A:
+        X(I1) := (N, index, 1);
+        index += 1;
+    
+    index = 2;
+    For each L1 in L, except A:
+        X(L1) := (N, 1, index);
+        index += 1;
+
+    # we now have the top row and left column of the rectangular band assigned.
+    # if we now consider all products of elements in I and elements in L, we get
+    # the full rectangular band.
+
+    for 2 <= x <= IS, and 2 <= y <= LS:
+        K1 := Inverse of (N, x, 1) under X; # should pull back to a unique element of I
+        K2 := Inverse of (N, 1, y) under X;
+        X(K1*K2) := (N, x, y);
+
+# now every element of B should map to a 3-tuple telling you what rectangular band to
+# look in, and then the coordinates of the specific element.
+Y := Inverse(X); # X should be a bijection
+
+
+# armed with:
+# - the quotient semilattice Q, of size N
+# - bijections X, Y
+# - the list C of dimensions of each semilattice element
+# - the semilattice structure function S
+# we can now proceed to find the transformations induced on Q[j] by all elements
+# of any Q[i] where S(i,j)=True.
+
+MAP := NxN matrix (list of lists?), currently empty;
+
+For i = 1, ..., N; for j = 1, ..., N:
+    If not S(i, j):
+        MAP[i][j] = 0; # or some other NoneType style thing
+    Else:
+        # we now need to decribe the actions of each element of Q[i] on Q[j].
+        # Q[i] is a rectangular band so we read its dimensions from C, and then
+        # we will eventually set MAP[i][j] to be a matrix with the same dimensions
+        # as Q[i]. Inside each matrix entry will be a pair of transformations.
+        # So, MAP[i][j] will end up being a partially filled matrix of matrices of
+        # pairs of transformations. :(
+
+        Ii, Li := C[i]; # dimensions of Q[i] are now Ii x Li
+        Ij, Lj := C[j];
+
+        MAPIJ := Ii x Li matrix, currently empty;
+
+        for 1 <= x <= Ii and for 1 <= y <= Li:
+            e := Y(i, x, y); # element we are multiplying everything by
+            
+            # The left transformation is obtained by left multiplying everything
+            # in Q[j] by e. Conveniently, this only affects the first coordinate
+            # of the rectangular band elements, so we can just check one column.
+            # the result will be a transformation on the I-set of Q[i], and since
+            # we've rephrased everything in terms of integers, this will just be
+            # a transformation on {1,...,Ij}.
+
+            l_transformation = [];
+
+            for 1 <= a <= Ij:
+                result_B := e * Y(j, a, 1); # the multiplication happens back in B
+                result_Q := X(result_B); # take this back to a tuple of integers
+                l_transformation.append( result_Q[2] ); # i.e. first rec.band coordinate.
+
+            # very similar for r_transformation.
+            
+            r_transformation = [];
+
+            for 1 <= b <= Lj:
+                result_B := Y(j, 1, b) * e;
+                result_Q := X(result_B);
+                r_transformation.append( result_Q[3] ); # i.e. second rec.band coordinate
+
+            MAPIJ[x][y] := (l_transformation, r_transformation);
+
+
+# we should now have a full map. We can get our function to return something like:
+
+return Q, S, MAP
+
+# i.e. first the quotient, then the semilattice relations, then the morphisms.
+
+# or, in isomorphism form, we can actually express everything symbolically as integer tuples:
+
+return N, C, X, MAP
+
+# i.e. number of recangular bands, dimensions of each such band, then the bijection into the
+# naturals, then the map explaining the transformations on integer sets induced.
