@@ -83,4 +83,62 @@ Y := Inverse(X); # X should be a bijection
 # we can now proceed to find the transformations induced on Q[j] by all elements
 # of any Q[i] where S(i,j)=True.
 
-MAP := NxN matrix (list of lists?), currently empty;    
+MAP := NxN matrix (list of lists?), currently empty;
+
+For i = 1, ..., N; for j = 1, ..., N:
+    If not S(i, j):
+        MAP[i][j] = 0; # or some other NoneType style thing
+    Else:
+        # we now need to decribe the actions of each element of Q[i] on Q[j].
+        # Q[i] is a rectangular band so we read its dimensions from C, and then
+        # we will eventually set MAP[i][j] to be a matrix with the same dimensions
+        # as Q[i]. Inside each matrix entry will be a pair of transformations.
+        # So, MAP[i][j] will end up being a partially filled matrix of matrices of
+        # pairs of transformations. :(
+
+        Ii, Li := C[i]; # dimensions of Q[i] are now Ii x Li
+        Ij, Lj := C[j];
+
+        MAPIJ := Ii x Li matrix, currently empty;
+
+        for 1 <= x <= Ii and for 1 <= y <= Li:
+            e := Y(i, x, y); # element we are multiplying everything by
+            
+            # The left transformation is obtained by left multiplying everything
+            # in Q[j] by e. Conveniently, this only affects the first coordinate
+            # of the rectangular band elements, so we can just check one column.
+            # the result will be a transformation on the I-set of Q[i], and since
+            # we've rephrased everything in terms of integers, this will just be
+            # a transformation on {1,...,Ij}.
+
+            l_transformation = [];
+
+            for 1 <= a <= Ij:
+                result_B := e * Y(j, a, 1); # the multiplication happens back in B
+                result_Q := X(result_B); # take this back to a tuple of integers
+                l_transformation.append( result_Q[2] ); # i.e. first rec.band coordinate.
+
+            # very similar for r_transformation.
+            
+            r_transformation = [];
+
+            for 1 <= b <= Lj:
+                result_B := Y(j, 1, b) * e;
+                result_Q := X(result_B);
+                r_transformation.append( result_Q[3] ); # i.e. second rec.band coordinate
+
+            MAPIJ[x][y] := (l_transformation, r_transformation);
+
+
+# we should now have a full map. We can get our function to return something like:
+
+return Q, S, MAP
+
+# i.e. first the quotient, then the semilattice relations, then the morphisms.
+
+# or, in isomorphism form, we can actually express everything symbolically as integer tuples:
+
+return N, C, X, MAP
+
+# i.e. number of recangular bands, dimensions of each such band, then the bijection into the
+# naturals, then the map explaining the transformations on integer sets induced.
