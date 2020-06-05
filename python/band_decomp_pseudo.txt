@@ -66,7 +66,7 @@ For each i = 1, ..., N:
     # the full rectangular band.
 
     for 2 <= x <= IS, and 2 <= y <= LS:
-        K1 := Inverse of (N, x, 1) under X; # should pull back to a unique element of I
+        K1 := Inverse of (N, x, 1) under X; # should pull back to a unique element of B
         K2 := Inverse of (N, 1, y) under X;
         X(K1*K2) := (N, x, y);
 
