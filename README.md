@@ -5,12 +5,15 @@ focused on implementing efficient algorithms for the word problem in free bands
 
 ## Goals
 
-- [ ] Read section 4.5 of Howie's book *"Fundamentals of Semigroup Theory"*
-- [ ] Understand the paper *"Efficient Testing of Equivalence of Words 
+- [x] Read section 4.5 of Howie's book *"Fundamentals of Semigroup Theory"*
+- [x] Understand the paper *"Efficient Testing of Equivalence of Words 
 in a Free Idempotent Semigroup"* by Jakub Radoszewski and Wojciech Rytter
-  - [ ] Produce interval automaton (Fig 1. in paper)
-  - [ ] Explain this to James
+  - [x] Produce interval automaton (Fig 1. in paper)
+  - [x] Explain this to James
 - [ ] Implement the algorithm
   - [ ] Prototype in python
   - [ ] Implement in GAP for tests
+    - [x] Implement Right
+    - [ ] Implement LevelEdges
+    - [x] Implement RadixSort
   - [ ] Implement in C++ for libsemigroups
