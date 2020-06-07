@@ -30,7 +30,7 @@ LevelEdges := function(string, level, index)
     # and right: ltag and rtag.
     ltag := 7;
     rtag := 10;
-    out := [ltag, string[rights[i]+1], string[lefts[j]-1], rtag];
+    out  := [ltag, string[rights[i] + 1], string[lefts[j] - 1], rtag];
     # also note that rights[i] should never be at the end of the string
     # and lefts[j] should never be 1 by the same logic. This is because
     # otherwise, our string at the current level would contain the same
