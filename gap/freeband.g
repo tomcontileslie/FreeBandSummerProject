@@ -141,8 +141,8 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
   # leftk  = Left(w, k)
   # rightm = Right(w, k-1)
   # leftm  = Left(w, k-1)
-  # radixr = ???
-  # radixl = ???
+  # radixr = radix called on LevelEdges from level k-1, right list
+  # radixl = radix called on LevelEdges from level k-1, left list
   #
   # if this is too difficult then we can call functions inside this one
   # rather than passing input. This risks calculating some things twice.
@@ -154,10 +154,11 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
   
   if k = 1 then
     # in this case, regardless of the length of each node, the 4-tuples
-    # have the empty word (1) as outer coordinates and the 
+    # have the empty word (1) as outer coordinates and the single character
+    # w[i] as inner coordinates.
     for i in [1 .. n] do
       Add(outr, [1, w[i], w[i], 1]);
-      Add(ourl, [1, w[i], w[i], 1]);
+      Add(outl, [1, w[i], w[i], 1]);
     od;
   else
     for i in [1 .. n] do
@@ -174,7 +175,7 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
 	Add( outl, fail );
       od;
   fi;
-  return [outr, outl]
+  return [outr, outl];
 
 end;
 
