@@ -1,62 +1,75 @@
-Right := function(w, k)
-  local right, i, j, subword_content_size, multiplicity, alphabet_size,
-        w_num_rep, length_w, i_set;
+# Its useful to work with lists of positive integers, rather than simply strings.
+# Every string will be represented as a list of positive integers, the distinct
+# numbers of which corresponds to distinct characters of the string.
+# The ordering of the integers is exactly the ordering of their corresponding
+# characters by their first appearence.
+# For example, we represent the string "bbababc" as [1, 1, 2, 1, 2, 1, 3].
 
-  # The first thing we do is convert w from a string in to a list of positive
-  # integers. Each positive integer corresponds to each distinct letter in the
-  # content of w, in order of first appearence. For example, "aabac" would be
-  # represented as [1, 1, 2, 1, 3]. This is accompanied by a list, multiplicity,
-  # which keeps track of the number of occurences of each letter in the 'sliding
-  # window'. The i'th entry in multiplicity is the number of occurences of the
-  # letter corresponding to i.  For example, if we were looking at the subword
-  # "aab" in the above, multiplicity would be [2, 1, 0].
-  #
-  # My previous approach was to keep w as a string, and create a list called
-  # w_content, whose entries are the distinct letters of w in order of first
-  # appearence. For example, for "aabac", we would have content = [a, b, c].
-  # An inefficiency in this approach was the fact that, if I wanted to call
-  # the entry in multiplicity corresponding to a particular character w[i],
-  # I had to first find the position of the character in content, i, and then
-  # ask for multiplicity[i]. Representing w with positive integers instead,
-  # we simply call multiplicity[w[i]], and so don't have to perform a list
-  # search.
+StringToListOfPosInts := function(string)
+  local L, distinct_chars, lookup, i;
 
-  length_w       := Length(w);
+  L := Length(string);
+  if L = 0 then
+    return [];
+  fi;
 
-  alphabet_size := 0;
-  w_num_rep     := [];
-  multiplicity  := [];
+  string := List(string, IntChar);  # Converts string into a list of positive
+                                    # integers corresponding to each character
+  distinct_chars := 1;
+  lookup         := [];
+  # lookup will build a correspondence between the positive integers in string,
+  # and the positive integers [1 .. n] where n is the number of distinst
+  # numbers in string.
 
-  for i in [1 .. length_w] do
-    i_set := false;
-    if i > 1 then
-      for j in [1 .. i - 1] do
-        if w[i] = w[j] then
-          # w[i] has already appeared in the word, and been assigned to j
-          w_num_rep[i] := w_num_rep[j];
-          i_set        := true;
-          break;
-        fi;
-      od;
-    fi;
-    if not i_set then
-      alphabet_size := alphabet_size + 1;
-      w_num_rep[i]  := alphabet_size;
-      Add(multiplicity, 0);
+  lookup[string[1]] := 1;  # Represent the first entry in string as 1.
+  string[1]         := lookup[string[1]];
+  for i in [2 .. L] do
+    if IsBound(lookup[string[i]]) then
+      # If the string[i] entry has already been assigned a number in [1 .. n]
+      # then we reassign string[i] to this number.
+      string[i] := lookup[string[i]];
+    else
+      # If string[i] entry hasn't already been assigned a number in [1 .. n],
+      # then we need to give it the lowest available one. distinct_chars keeps
+      # track of this number.
+      distinct_chars    := distinct_chars + 1;
+      lookup[string[i]] := distinct_chars;
+      string[i]         := lookup[string[i]];
     fi;
   od;
 
-  w := w_num_rep;  # Replace w with its number representation
+  return string;
+end;
 
-  # In the ith iteration of the below letter of w, and construct a subword,
-  # moving as far in to w as we can before the content of the subword exceeds
-  # k. When we move to i + 1 from i, we can delete the first entry of subword
-  # from the previous iteration, and then we have a similar subword starting
-  # from the correct place.
+Right := function(w, k)
+  local right, i, j, subword_content_size, multiplicity, length_w;
 
-  j                    := 1;
+  length_w := Length(w);
+  if length_w = 0 then
+    return [];
+  fi;
+
+  w := StringToListOfPosInts(w);
+
+  # In the ith iteration of the below, we start at the ith letter of w
+  # and construct a subword, moving as far in to w as we can before the
+  # size of the content of the subword exceeds k. When we move to i + 1
+  # from i, we can delete the first entry of subword from the previous
+  # iteration, and then we inherit the first piece of the next subword,
+  # starting from the correct place.
+
+  j                    := 0;
   right                := [];
   subword_content_size := 0;
+  multiplicity         := List([1 .. Maximum(w)], x -> 0);
+
+  # subword_content_size keeps track of the number of distinct characters
+  # in the subword of w we are looking at in the 'sliding window'. We keep
+  # track of subword_content_size by using a list, multiplicity. The i'th
+  # position of multiplicity is the number of occurrences in the subword of
+  # the character of w which we represent as i (via StringToListOfPosInts).
+  # multiplicity has length Maximum(w), since Maximum(w) is precisely the
+  # number of distinct characters in w.
 
   for i in [1 .. length_w] do
     if i > 1 then
@@ -64,6 +77,16 @@ Right := function(w, k)
       # subword starting position of i - 1. Since we're not actually storing
       # the subword itself, this corresponds to lowering the multiplicity
       # of the character corresponding to w[i - 1] in subword by 1.
+
+      # For when James reviews this: I felt I should keep this conditional,
+      # since deleting it (as far as I can see!) would mean basically
+      # replicating the below while loop and assignments of right[i] for
+      # the i = 1 case. I'm not sure if duplicate code is a good idea.
+      # A thought I had was to stick a dummy character onto the beginning
+      # of w. The iteration where we start at w[1] would change to start
+      # at w[2], and deleting the previous character would just be deleting
+      # the dummy character in this case. However, again, from a readability
+      # point of view this might not make sense.
 
       multiplicity[w[i - 1]] := multiplicity[w[i - 1]] - 1;
       if multiplicity[w[i - 1]] = 0 then
@@ -73,7 +96,9 @@ Right := function(w, k)
         subword_content_size := subword_content_size - 1;
       fi;
     fi;
-    while j <= length_w and subword_content_size <= k do
+    while j < length_w and
+        (multiplicity[w[j + 1]] <> 0 or subword_content_size < k) do
+      j := j + 1;
       if multiplicity[w[j]] = 0 then
         # If w[j] has zero multiplicity in the subword, then by adding it
         # we increase the content size by 1.
@@ -82,32 +107,20 @@ Right := function(w, k)
       multiplicity[w[j]] := multiplicity[w[j]] + 1;
       # The multiplicity of w[j], having just been added to our subword, is
       # increased by 1.
-      j := j + 1;
-      # We move the end of our subword along by one.
     od;
-    if subword_content_size = k + 1 then
-      # If the loop ended with content size k + 1, this means that the last
-      # character we added wasn't already in the subword, and was the one which
-      # took us over our content size limit of k. Our k-right interval must have
-      # ended on the letter before this character.
-      right[i]               := j - 2;
-      # Since we increase j by one at the end of the loop, the position in w
-      # of the character which took us over the k threshold is j - 1, and so
-      # the k-right interval ends at j - 2, the position before this.
-      # This rolls the right bound of the subword back to where it was just
-      # before the character which took us over the k size threshold was met.
-      # EDIT: Instead of 'rolling back' one character, the bound of the subword
-      # just remains here.
-    elif subword_content_size = k then
-      # If the loop terminates with subword content size equal to k, then we
-      # reached the end of word w.
-      right[i] := length_w;
-    elif subword_content_size < k then
-      right[i] := -1;
-      # If the loop ended and the content size was less than k, this means that
-      # the subword from the i'th position to the end of word w contains fewer
-      # than k distinct characters, and so no k-right interval starts from
-      # position i. We use -1 to denote this.
+    # For when James reviews this: I've kept this as a while loop, but have
+    # restructurd it in a way which makes assigning right[i] a lot simpler.
+    # In particular, when we reach a letter which would make the content
+    # exceed size k, we just do nothing, rather than adding the letter to
+    # our subword and then removing it!
+
+    # If the loop ended with content_size_k, then either we reached the end of
+    # w, or met a new letter and stopped. In either case, the k-right interval
+    # starting at i is [i .. j].
+    if subword_content_size = k then
+      right[i] := j;
+    else
+      right[i] := fail;
     fi;
   od;
   return right;
@@ -117,9 +130,9 @@ Left := function(w, k)
   local i, left, length_w;
   length_w := Length(w);
   w        := Reversed(w);
-  left     := Reversed(f(w, k));
+  left     := Reversed(Right(w, k));
   for i in [1 .. length_w] do
-    if left[i] <> -1 then
+    if left[i] <> fail then
       left[i] := length_w - left[i] + 1;
     fi;
   od;
