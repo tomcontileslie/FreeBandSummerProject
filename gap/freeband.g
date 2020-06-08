@@ -1,14 +1,6 @@
 Right := function(w, k)
-  local right, i, j, subword_content_size, multiplicity,
-  alphabet_size, w_num_rep, l, i_set;
-  right        := [];
-  j            := 1;
-  w_content    := [];
-  multiplicity := [];
-
-  subword_content_size := 0;
-  alphabet_size        := 0;
-  w_num_rep            := [];
+  local right, i, j, subword_content_size, multiplicity, alphabet_size,
+        w_num_rep, length_w, i_set;
 
   # The first thing we do is convert w from a string in to a list of positive
   # integers. Each positive integer corresponds to each distinct letter in the
@@ -29,13 +21,19 @@ Right := function(w, k)
   # we simply call multiplicity[w[i]], and so don't have to perform a list
   # search.
 
-  for i in [1 .. Length(w)] do
+  length_w       := Length(w);
+
+  alphabet_size := 0;
+  w_num_rep     := [];
+  multiplicity  := [];
+
+  for i in [1 .. length_w] do
     i_set := false;
     if i > 1 then
-      for l in [1 .. i - 1] do
-        if w[i] = w[l] then
+      for j in [1 .. i - 1] do
+        if w[i] = w[j] then
           # w[i] has already appeared in the word, and been assigned to j
-          w_num_rep[i] := w_num_rep[l];
+          w_num_rep[i] := w_num_rep[j];
           i_set        := true;
           break;
         fi;
@@ -56,7 +54,11 @@ Right := function(w, k)
   # from the previous iteration, and then we have a similar subword starting
   # from the correct place.
 
-  for i in [1 .. Length(w)] do
+  j                    := 1;
+  right                := [];
+  subword_content_size := 0;
+
+  for i in [1 .. length_w] do
     if i > 1 then
       # If i > 1, we want to delete the letter corresponding to our previous
       # subword starting position of i - 1. Since we're not actually storing
@@ -71,7 +73,7 @@ Right := function(w, k)
         subword_content_size := subword_content_size - 1;
       fi;
     fi;
-    while j <= Length(w) and subword_content_size <= k do
+    while j <= length_w and subword_content_size <= k do
       if multiplicity[w[j]] = 0 then
         # If w[j] has zero multiplicity in the subword, then by adding it
         # we increase the content size by 1.
@@ -92,18 +94,14 @@ Right := function(w, k)
       # Since we increase j by one at the end of the loop, the position in w
       # of the character which took us over the k threshold is j - 1, and so
       # the k-right interval ends at j - 2, the position before this.
-      multiplicity[w[j - 1]] := 0;
-      subword_content_size   := subword_content_size - 1;
-      j                      := j - 1;
       # This rolls the right bound of the subword back to where it was just
       # before the character which took us over the k size threshold was met.
-      # Actually, I could possibly refactor this so we 'stay' here. The first
-      # thing that happens when we return to the loop is returning the j'th
-      # character, so we might as well not roll it back.
+      # EDIT: Instead of 'rolling back' one character, the bound of the subword
+      # just remains here.
     elif subword_content_size = k then
-      right[i] := j - 1;
-      # If the loop ended with content size k, this means we reached the end
-      # of the word. I could possibly tidy up this piece too.
+      # If the loop terminates with subword content size equal to k, then we
+      # reached the end of word w.
+      right[i] := length_w;
     elif subword_content_size < k then
       right[i] := -1;
       # If the loop ended and the content size was less than k, this means that
@@ -116,12 +114,13 @@ Right := function(w, k)
 end;
 
 Left := function(w, k)
-  local i, left;
-  w    := Reversed(w);
-  left := Reversed(f(w, k));
-  for i in [1 .. Length(w)] do
+  local i, left, length_w;
+  length_w := Length(w);
+  w        := Reversed(w);
+  left     := Reversed(f(w, k));
+  for i in [1 .. length_w] do
     if left[i] <> -1 then
-      left[i] := Length(w) - left[i] + 1;
+      left[i] := length_w - left[i] + 1;
     fi;
   od;
   return left;
