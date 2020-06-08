@@ -5,51 +5,89 @@
 # characters by their first appearence.
 # For example, we represent the string "bbababc" as [1, 1, 2, 1, 2, 1, 3].
 
-StringToListOfPosInts := function(string)
+ListOfPosIntsToStandardListOfPosInts := function(list)
   local L, distinct_chars, lookup, i;
-
-  L := Length(string);
+  if not IsList(list) then
+    ErrorNoReturn("expected a list as the argument");
+  fi;
+  for i in list do
+    if not IsPosInt(i) then
+      ErrorNoReturn("expected a list of positive integers as the argument");
+    fi;
+  od;
+  L := Length(list);
   if L = 0 then
     return [];
   fi;
 
-  string := List(string, IntChar);  # Converts string into a list of positive
-                                    # integers corresponding to each character
   distinct_chars := 1;
   lookup         := [];
   # lookup will build a correspondence between the positive integers in string,
   # and the positive integers [1 .. n] where n is the number of distinst
   # numbers in string.
 
-  lookup[string[1]] := 1;  # Represent the first entry in string as 1.
-  string[1]         := lookup[string[1]];
+  lookup[list[1]] := 1;  # Represent the first entry in string as 1.
+  list[1]         := lookup[list[1]];
   for i in [2 .. L] do
-    if IsBound(lookup[string[i]]) then
+    if IsBound(lookup[list[i]]) then
       # If the string[i] entry has already been assigned a number in [1 .. n]
       # then we reassign string[i] to this number.
-      string[i] := lookup[string[i]];
+      list[i] := lookup[list[i]];
     else
       # If string[i] entry hasn't already been assigned a number in [1 .. n],
       # then we need to give it the lowest available one. distinct_chars keeps
       # track of this number.
-      distinct_chars    := distinct_chars + 1;
-      lookup[string[i]] := distinct_chars;
-      string[i]         := lookup[string[i]];
+      distinct_chars  := distinct_chars + 1;
+      lookup[list[i]] := distinct_chars;
+      list[i]         := lookup[list[i]];
     fi;
   od;
 
-  return string;
+  return list;
+end;
+
+StringToStandardListOfPosInts := function(string)
+  if not IsString(string) then
+    ErrorNoReturn("expected a string as the argument, found ", string);
+  elif Length(string) = 0 then
+    return [];
+  fi;
+  return ListOfPosIntsToStandardListOfPosInts(List(string, IntChar));
+  # If we get a list of positive integers from string using IntChar, then we
+  # can just use the ListOfPosIntsToStandardListOfPosInts method on that.
 end;
 
 Right := function(w, k)
-  local right, i, j, subword_content_size, multiplicity, length_w;
-
+  local max_char, right, i, j, subword_content_size,
+  multiplicity, length_w;
+  # We need to check that w is of the form we agreed. I think in the meeting
+  # on Monday we agreed that we will use the list of positive integers
+  # representation.
+  if not IsList(w) then
+    ErrorNoReturn("expected a list as first argument");
+  elif not IsPosInt(k) then
+    ErrorNoReturn("expected a positive integer as second argument");
+  fi;
+  max_char := 0;
+  for i in w do
+    if not IsPosInt(i) then
+      ErrorNoReturn("expected first argument to be a list of positive integers");
+    fi;
+    if i > max_char + 1 then
+      ErrorNoReturn("expected first argument w to be a list of positive ",
+                    "integers which contains at least one instance of each ",
+                    "integer in [1 .. Maximum(w)], and whose entries are ",
+                    "ordered in order of first appearence.");
+      # For when James reviews this: I hope this error message makes at least
+      # some sense!
+    elif i > max_char then
+      max_char := max_char + 1;
+    fi;
+  od;
   length_w := Length(w);
   if length_w = 0 then
     return [];
   fi;
-
-  w := StringToListOfPosInts(w);
 
   # In the ith iteration of the below, we start at the ith letter of w
   # and construct a subword, moving as far in to w as we can before the
@@ -127,9 +165,29 @@ Right := function(w, k)
 end;
 
 Left := function(w, k)
-  local i, left, length_w;
+  local max_char, i, left, length_w;
+  if not IsList(w) then
+    ErrorNoReturn("expected a list as first argument");
+  elif not IsPosInt(k) then
+    ErrorNoReturn("expected a positive integer as second argument");
+  fi;
+  max_char := 0;
+  for i in w do
+    if not IsPosInt(i) then
+      ErrorNoReturn("expected first argument to be a list of positive integers");
+    fi;
+    if i > max_char + 1 then
+      ErrorNoReturn("expected first argument w to be a list of positive ",
+                    "integers which contains at least one instance of each ",
+                    "integer in [1 .. Maximum(w)], and whose entries are ",
+                    "ordered in order of first appearence.");
+    elif i > max_char then
+      max_char := max_char + 1;
+    fi;
+  od;
+
   length_w := Length(w);
-  w        := Reversed(w);
+  w        := ListOfPosIntsToStandardListOfPosInts(Reversed(w));
   left     := Reversed(Right(w, k));
   for i in [1 .. length_w] do
     if left[i] <> fail then
