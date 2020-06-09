@@ -201,7 +201,7 @@ end;
 # the Right method, but since I've still got a few ideas for tidying Right up,
 # I'll wait until then to do this.
 
-LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
+LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
   local n, outr, outl, i;
   # Takes an input word and a level (size of content), and returns
   # two lists of 4-tuples: a right list and a left list. Right first.
@@ -211,11 +211,26 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
   # leftk  = Left(w, k)
   # rightm = Right(w, k-1)
   # leftm  = Left(w, k-1)
-  # radixr = radix called on LevelEdges from level k-1, right list
-  # radixl = radix called on LevelEdges from level k-1, left list
+  # radixr = radix called on LevelEdges from level k-2
   #
   # if this is too difficult then we can call functions inside this one
   # rather than passing input. This risks calculating some things twice.
+
+  if not IsList(w) then
+    ErrorNoReturn("expected a string as the argument, found ", w);
+  fi;
+  if not IsPosInt(k) then
+    ErrorNoReturn("expected a positive integer as second argument");
+  fi;
+  if not k <= Length(w) then
+    ErrorNoReturn("level k cannot be greater than length of word");
+  fi;
+  if not (IsList(radix) and IsList(rightk)
+                        and IsList(leftk)
+                        and IsList(rightm)
+                        and IsList(leftm)) then
+    ErrorNoReturn("expected final five arguments to be lists");
+  fi;
 
   n    := Length(w);
 
@@ -233,21 +248,21 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
   else
     for i in [1 .. n] do
       if rightk[i] <> fail then
-        Add(outr, [radixr[i], w[rightm[i] + 1],
-                   w[leftm[rightk[i]] - 1], radixl[rightk[i]]]);
+        Add(outr, [radix[i], w[rightm[i] + 1],
+                   w[leftm[rightk[i]] - 1], radix[rightk[i] + n]]);
       else
         Add(outr, [fail, fail, fail, fail]);
       fi;
 
       if leftk[i] <> fail then
-        Add(outl, [radixr[leftk[i]], w[rightm[leftk[i] + 1],
-                   w[leftm[i] - 1], radixl[i]]);
+        Add(outl, [radix[leftk[i]], w[rightm[leftk[i] + 1]],
+                   w[leftm[i] - 1], radix[i + n]]);
       else
         Add(outl, [fail, fail, fail, fail]);
       fi;
     od;
   fi;
-  return [outr, outl];
+  return Concatenation(outr, outl);
 
 end;
 
