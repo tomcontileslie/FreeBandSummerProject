@@ -14,6 +14,9 @@ in a Free Idempotent Semigroup"* by Jakub Radoszewski and Wojciech Rytter
   - [ ] Prototype in python
   - [ ] Implement in GAP for tests
     - [x] Implement Right
+      - [x] Add tests for Right
     - [ ] Implement LevelEdges
-    - [x] Implement RadixSort
+      - [ ] Add tests for LevelEdges
+    - [ ] Implement RadixSort
+      - [ ] Add tests for RadixSort
   - [ ] Implement in C++ for libsemigroups
