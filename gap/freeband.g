@@ -236,14 +236,14 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
         Add(outr, [radixr[i], w[rightm[i] + 1],
                    w[leftm[rightk[i]] - 1], radixl[rightk[i]]]);
       else
-        Add(outr, fail);
+        Add(outr, [fail, fail, fail, fail]);
       fi;
 
       if leftk[i] <> fail then
         Add(outl, [radixr[leftk[i]], w[rightm[leftk[i] + 1],
                    w[leftm[i] - 1], radixl[i]]);
       else
-        Add(outl, fail);
+        Add(outl, [fail, fail, fail, fail]);
       fi;
     od;
   fi;
