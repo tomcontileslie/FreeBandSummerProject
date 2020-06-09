@@ -201,43 +201,53 @@ end;
 # the Right method, but since I've still got a few ideas for tidying Right up,
 # I'll wait until then to do this.
 
-LevelEdges := function(string, level, index)
-  local i, j, rights, lefts, ltag, rtag, out;
-  # expects a string, then an integer (less than size of content of string),
-  # then a pair [i,j] of indices which should contain the same number of
-  # different characters as the level.
-  i := index[1];
-  j := index[2];
+LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
+  local n, outr, outl, i;
+  # Takes an input word and a level (size of content), and returns
+  # two lists of 4-tuples: a right list and a left list. Right first.
+  #
+  # Assumes that the outputs of other functions are passed as input:
+  # rightk = Right(w, k)
+  # leftk  = Left(w, k)
+  # rightm = Right(w, k-1)
+  # leftm  = Left(w, k-1)
+  # radixr = radix called on LevelEdges from level k-1, right list
+  # radixl = radix called on LevelEdges from level k-1, left list
+  #
+  # if this is too difficult then we can call functions inside this one
+  # rather than passing input. This risks calculating some things twice.
 
-  # for now let's make an array for the Right function.
-  # TODO actually link this up to the Right function later.
-  # provisional choice of "undefined" entry is -1.
-  # we shouldn't have to worry about dealing with undefined inputs because
-  # the existence of an interval with level characters implies the existence
-  # of subintervals with level-1 characters.
-  rights := [2, 4, 5, 6, 6, 7, -1];
-  lefts  := [-1, -1, 1, 1, 1, 4, 6];
-  # don't know if fail is usually used as a placeholder?
+  n    := Length(w);
 
-  if level = 1 then
-    # all strings at this level have only the empty string below, which we
-    # will represent as 1.
-    # this case expects that index=[i,i] for some i.
-    out := [1, string[i], string[i], 1];
+  outr := [];
+  outl := [];
+
+  if k = 1 then
+    # in this case, regardless of the length of each node, the 4-tuples
+    # have the empty word (1) as outer coordinates and the single character
+    # w[i] as inner coordinates.
+    for i in [1 .. n] do
+      Add(outr, [1, w[i], w[i], 1]);
+      Add(outl, [1, w[i], w[i], 1]);
+    od;
   else
-    # TODO we'll have to call RadixSort somewhere here
-    # for now let's assume calling it gave us two numbers for left
-    # and right: ltag and rtag.
-    ltag := 7;
-    rtag := 10;
-    out  := [ltag, string[rights[i] + 1], string[lefts[j] - 1], rtag];
-    # also note that rights[i] should never be at the end of the string
-    # and lefts[j] should never be 1 by the same logic. This is because
-    # otherwise, our string at the current level would contain the same
-    # amount of different characters as its substring which is constructed
-    # to have one less character.
+    for i in [1 .. n] do
+      if rightk[i] <> fail then
+        Add(outr, [radixr[i], w[rightm[i] + 1],
+                   w[leftm[rightk[i]] - 1], radixl[rightk[i]]]);
+      else
+        Add(outr, fail);
+      fi;
+
+      if leftk[i] <> fail then
+        Add(outl, [radixr[leftk[i]], w[rightm[leftk[i] + 1],
+                   w[leftm[i] - 1], radixl[i]]);
+      else
+        Add(outl, fail);
+      fi;
+    od;
   fi;
-  return out;
+  return [outr, outl];
 
 end;
 
