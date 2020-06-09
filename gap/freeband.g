@@ -211,7 +211,7 @@ LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
   # leftk  = Left(w, k)
   # rightm = Right(w, k-1)
   # leftm  = Left(w, k-1)
-  # radixr = radix called on LevelEdges from level k-2
+  # radixr = radix called on LevelEdges from level k-1
   #
   # if this is too difficult then we can call functions inside this one
   # rather than passing input. This risks calculating some things twice.
