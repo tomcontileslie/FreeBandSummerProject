@@ -130,12 +130,11 @@ end;
 # the Right method, but since I've still got a few ideas for tidying Right up,
 # I'll wait until then to do this.
 
-
 LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
   local n, outr, outl, i;
   # Takes an input word and a level (size of content), and returns
   # two lists of 4-tuples: a right list and a left list. Right first.
-  # 
+  #
   # Assumes that the outputs of other functions are passed as input:
   # rightk = Right(w, k)
   # leftk  = Left(w, k)
@@ -147,11 +146,11 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
   # if this is too difficult then we can call functions inside this one
   # rather than passing input. This risks calculating some things twice.
 
-  n := Length(w);
-  
+  n    := Length(w);
+
   outr := [];
   outl := [];
-  
+
   if k = 1 then
     # in this case, regardless of the length of each node, the 4-tuples
     # have the empty word (1) as outer coordinates and the single character
@@ -162,18 +161,20 @@ LevelEdges := function(w, k radixr, radixl, rightk, leftk, rightm, leftm)
     od;
   else
     for i in [1 .. n] do
-      if rightk[i] <> fail do # pretty sure this implies no other calls will
-	    		      # fail
-        Add( outr, [ radixr[i], w[rightm[i] + 1], w[leftm[rightk[i]] - 1], radixl[rightk[i]] ] );
+      if rightk[i] <> fail then
+        Add(outr, [radixr[i], w[rightm[i] + 1],
+                   w[leftm[rightk[i]] - 1], radixl[rightk[i]]]);
       else
-	Add( outr, fail );
-      od;
+        Add(outr, fail);
+      fi;
 
-      if leftk[i] <> fail do
-	Add( outl, [ radixr[leftk[i]], w[rightm[leftk[i] + 1], w[leftm[i] - 1], radixl[i] ] );
+      if leftk[i] <> fail then
+        Add(outl, [radixr[leftk[i]], w[rightm[leftk[i] + 1],
+                   w[leftm[i] - 1], radixl[i]]);
       else
-	Add( outl, fail );
-      od;
+        Add(outl, fail);
+      fi;
+    od;
   fi;
   return [outr, outl];
 
