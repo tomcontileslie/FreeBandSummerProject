@@ -266,56 +266,65 @@ LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
 
 end;
 
-# Given a list A of lists of size 4, each entry of the form
-# [i, a, b, j] where 1 <= a, b <= n and 1 <= i, j <= k
-# where n is the length of A and k is the size of alphabet,
-# output result a list of integers between 1 and n,  such that
+# Given a list "level" of lists of size 4, each entry of the form
+# [i, a, b, j] where 1 <= a, b <= k and 1 <= i, j <= n
+# where n is the length of "level" and k is the size of alphabet,
+# output "result" a list of integers between 1 and n,  such that
 # two entries in A are the same if and only if the
 # corresponding entries in result are the same.
-RadixSort := function(A, k)
+RadixSort := function(level, k)
   local B, result, count_sort, i, n, c;
 
-  count_sort := function(A, i, radix)
-    local B, C, a, j;
-    B := ListWithIdenticalEntries(Length(A), 0);
+  count_sort := function(B, i, radix, level)
+    local C, j, swap;
+
+    swap := function(u, v, B)
+      local t;
+      t    := B[u];
+      B[u] := B[v];
+      B[v] := t;
+    end;
+
     C := ListWithIdenticalEntries(radix, 0);
-    for a in A do
-      C[a[1][i]] := C[a[1][i]] + 1;
+    for j in [1 .. Length(B)] do
+      if level[B[j]][i] <> fail then
+        C[level[B[j]][i]] := C[level[B[j]][i]] + 1;
+      fi;
     od;
     for j in [2 .. radix] do
       C[j] := C[j] + C[j - 1];
     od;
-    for a in Reversed(A) do
-      B[C[a[1][i]]] := a;
-      C[a[1][i]]    := C[a[1][i]] - 1;
+    j := Length(B);
+    while j <> 0 do
+      while B[j] > 0 and level[B[j]][i] <> fail and C[level[B[j]][i]] <> j do
+        B[j] := -B[j];
+        swap(j, C[level[B[j]][i]], B);
+        C[level[B[j]][i]] := C[level[B[j]][i]] - 1;
+      od;
+      j := j - 1;
+    od;
+    for j in [1 .. Length(B)] do
+      B[j] := AbsInt(B[j]);
     od;
     return B;
   end;
 
-  n := Length(A);
+  n := Length(level);
+  B := [1 .. n];
+  B := count_sort(B, 1, n);
+  B := count_sort(B, 2, k);
+  B := count_sort(B, 3, k);
+  B := count_sort(B, 4, n);
 
-  B := [];
-  for i in [1 .. n] do
-    Add(B, [A[i], i]);
-  od;
-
-  for i in [1 .. 4] do
-    if i = 1 or i = 4 then
-      B := count_sort(B, i, n);
-    else
-      B := count_sort(B, i, k);
-    fi;
-  od;
-
-  result := ListWithIdenticalEntries(n, 0);
+  result := ListWithIdenticalEntries(n, fail);
   c      := 1;
   for i in [2 .. n] do
-    if B[i][1] <> B[i - 1][1] then
+    if level[B[i]] <> level[B[i - 1]] then
       c := c + 1;
     fi;
-    result[B[i][2]] := c;
+    result[B[i]] := c;
   od;
-  result[B[1][2]] := 1;
+  result[B[1]] := 1;
 
   return result;
 end;
