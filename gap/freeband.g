@@ -339,7 +339,8 @@ NotRadixSort := function(level, c)
 end;
 
 EqualInFreeBand := function(w1, w2)
-  local s1, dollar, w, c, rightk, leftk, edgecodes, rightm, leftm, k;
+  local dollar, l1, l2, w, c, check, rightk, leftk,
+        edgecodes, rightm, leftm, i, k;
   #
   # This function implements Radoszewski and Rytter's O(n . |Sigma|) algorithm
   # for testing equivalence of words in a free band.
@@ -357,20 +358,44 @@ EqualInFreeBand := function(w1, w2)
     ErrorNoReturn("expected two lists of positive integers");
   fi;
 
-  s1 := Set(w1);
-  if s1 <> Set(w2) then
-    return false;  # different contents <=> not equal
+  if IsEmpty(w1) or IsEmpty(w2) then
+    # if one list is empty, the other has to be too.
+    return IsEmpty(w1) and IsEmpty(w2);
   fi;
 
-  if Length(s1) = 0 or Length(s1) = 1 then
-    return true;  # both cases trivial
+  dollar := Maximum(Maximum(w1), Maximum(w2)) + 1;
+  l1     := Length(w1);
+  l2     := Length(w2);
+
+  w := Concatenation(w1, [dollar], w2);
+  w := ListOfPosIntsToStandardListOfPosInts(w);
+
+  # create a list with as many "false" entries as there are different
+  # characters in w1: we find this by finding the number that the dollar
+  # got mapped to, and subtracting 1.
+  # run through w2 and set these to "true" progressively as we see the
+  # corresponding numbers.
+  c     := w[l1 + 1];
+  check := ListWithIdenticalEntries(c, false);
+  for i in [l1 + 2 .. l1 + 1 + l2] do
+    if w[i] >= c then
+      # then w2 contains a character not in w1
+      return false;
+    else
+      check[w[i]] := true;
+    fi;
+  od;
+  if SizeBlist(check) <> c - 1 then
+    return false;
   fi;
 
-  dollar := Maximum(w1) + 1;  # value definitely unused in w1, w2
-  w      := ListOfPosIntsToStandardListOfPosInts(Concatenation(w1,
-                                                              [dollar],
-                                                               w2));
-  c := Length(s1) + 1;
+  # If we got this far then the two lists have the same content.
+  # This was O(n), faster than testing Set(w1), Set(w2) for equality.
+  # there is one more easy check:
+  if c = 2 then
+    # in this case both lists contain lots of copies of only one character.
+    return true;
+  fi;
 
   # if we've reached this point, then w contains at least 3 chars: c >= 3.
 
@@ -394,7 +419,7 @@ EqualInFreeBand := function(w1, w2)
   # now check whether the right-k of the first character (i.e. the word up
   # to the separator) is the same as the right-k of the first character
   # directly after the separator.
-  return edgecodes[1] = edgecodes[Length(w1) + 2];
+  return edgecodes[1] = edgecodes[l1 + 2];
 end;
 
 # previous pairs of equal words which returned erroneous answers, now
