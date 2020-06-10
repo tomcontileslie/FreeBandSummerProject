@@ -58,8 +58,7 @@ StringToStandardListOfPosInts := function(string)
 end;
 
 Right := function(w, k)
-  local max_char, right, i, j, subword_content_size,
-  multiplicity, length_w;
+  local max_char, right, i, j, content_size, multiplicity, length_w;
   # We need to check that w is of the form we agreed. I think in the meeting
   # on Monday we agreed that we will use the list of positive integers
   # representation.
@@ -96,10 +95,10 @@ Right := function(w, k)
   # iteration, and then we inherit the first piece of the next subword,
   # starting from the correct place.
 
-  j                    := 0;
-  right                := [];
-  subword_content_size := 0;
-  multiplicity         := List([1 .. Maximum(w)], x -> 0);
+  j            := 0;
+  right        := [];
+  content_size := 0;
+  multiplicity := ListWithIdenticalEntries(Maximum(w), 0);
 
   # subword_content_size keeps track of the number of distinct characters
   # in the subword of w we are looking at in the 'sliding window'. We keep
@@ -131,16 +130,16 @@ Right := function(w, k)
         # If we just deleted the last instance of the character corresponding
         # to w[i - 1] from the subword, then the content size of the subword
         # has decreased by 1.
-        subword_content_size := subword_content_size - 1;
+        content_size := content_size - 1;
       fi;
     fi;
     while j < length_w and
-        (multiplicity[w[j + 1]] <> 0 or subword_content_size < k) do
+        (multiplicity[w[j + 1]] <> 0 or content_size < k) do
       j := j + 1;
       if multiplicity[w[j]] = 0 then
         # If w[j] has zero multiplicity in the subword, then by adding it
         # we increase the content size by 1.
-        subword_content_size := subword_content_size + 1;
+        content_size := content_size + 1;
       fi;
       multiplicity[w[j]] := multiplicity[w[j]] + 1;
       # The multiplicity of w[j], having just been added to our subword, is
@@ -155,7 +154,7 @@ Right := function(w, k)
     # If the loop ended with content_size_k, then either we reached the end of
     # w, or met a new letter and stopped. In either case, the k-right interval
     # starting at i is [i .. j].
-    if subword_content_size = k then
+    if content_size = k then
       right[i] := j;
     else
       right[i] := fail;
@@ -175,8 +174,7 @@ Left := function(w, k)
   for i in w do
     if not IsPosInt(i) then
       ErrorNoReturn("expected first argument to be a list of positive integers");
-    fi;
-    if i > max_char + 1 then
+    elif i > max_char + 1 then
       ErrorNoReturn("expected first argument w to be a list of positive ",
                     "integers which contains at least one instance of each ",
                     "integer in [1 .. Maximum(w)], and whose entries are ",
@@ -196,10 +194,6 @@ Left := function(w, k)
   od;
   return left;
 end;
-
-# It might be slightly more effective if this were replaced with an analogue of
-# the Right method, but since I've still got a few ideas for tidying Right up,
-# I'll wait until then to do this.
 
 LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
   local n, outr, outl, i;
@@ -272,58 +266,50 @@ end;
 # output "result" a list of integers between 1 and n,  such that
 # two entries in A are the same if and only if the
 # corresponding entries in result are the same.
-RadixSort := function(level, k)
-  local B, result, count_sort, i, n, c;
+RadixSort := function(level_edges, alphabet_size)
+  local B, result, count_sort, i, n, counter;
 
-  count_sort := function(B, i, radix, level)
-    local C, j, swap, temp;
+  count_sort := function(B, i, radix)
+    local counts, j, result;
 
-    swap := function(u, v, B)
-      local t;
-      t    := B[u];
-      B[u] := B[v];
-      B[v] := t;
-    end;
-
-    C := ListWithIdenticalEntries(radix, 0);
+    counts := ListWithIdenticalEntries(radix + 1, 0);
     for j in [1 .. Length(B)] do
-      if level[B[j]][i] <> fail then
-        C[level[B[j]][i]] := C[level[B[j]][i]] + 1;
+      if level_edges[B[j]][i] <> fail then
+        counts[level_edges[B[j]][i]] := counts[level_edges[B[j]][i]] + 1;
+      else
+        counts[radix + 1] := counts[radix + 1] + 1;
       fi;
     od;
-    for j in [2 .. radix] do
-      C[j] := C[j] + C[j - 1];
+    for j in [2 .. radix + 1] do
+      counts[j] := counts[j] + counts[j - 1];
     od;
-    j := Length(B);
-    while j <> 0 do
-      while B[j] > 0 and level[B[j]][i] <> fail and C[level[B[j]][i]] <> j do
-        temp              := C[level[B[j]][i]];
-        C[level[B[j]][i]] := C[level[B[j]][i]] - 1;
-        swap(j, temp, B);
-        B[temp] := -B[temp];
-      od;
-      j := j - 1;
+    result := [1 .. Length(B)];
+    for j in [Length(B), Length(B) - 1 .. 1] do
+      if level_edges[B[j]][i] <> fail then
+        result[counts[level_edges[B[j]][i]]] := B[j];
+        counts[level_edges[B[j]][i]]         := counts[level_edges[B[j]][i]] - 1;
+      else
+        result[counts[radix + 1]] := B[j];
+        counts[radix + 1]         := counts[radix + 1] - 1;
+      fi;
     od;
-    for j in [1 .. Length(B)] do
-      B[j] := AbsInt(B[j]);
-    od;
-    return B;
+    return result;
   end;
 
-  n := Length(level);
+  n := Length(level_edges);
   B := [1 .. n];
-  B := count_sort(B, 1, n, level);
-  B := count_sort(B, 2, k, level);
-  B := count_sort(B, 3, k, level);
-  B := count_sort(B, 4, n, level);
+  B := count_sort(B, 1, n);
+  B := count_sort(B, 2, alphabet_size);
+  B := count_sort(B, 3, alphabet_size);
+  B := count_sort(B, 4, n);
 
-  result := ListWithIdenticalEntries(n, fail);
-  c      := 1;
+  result  := ListWithIdenticalEntries(n, fail);
+  counter := 1;
   for i in [2 .. n] do
-    if level[B[i]] <> level[B[i - 1]] then
-      c := c + 1;
+    if level_edges[B[i]] <> level_edges[B[i - 1]] then
+      counter := counter + 1;
     fi;
-    result[B[i]] := c;
+    result[B[i]] := counter;
   od;
   result[B[1]] := 1;
 
