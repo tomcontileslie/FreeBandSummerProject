@@ -398,7 +398,7 @@ EqualInFreeBand := function(w1, w2)
 
     edgecodes := LevelEdges(w, k, edgecodes, rightk, leftk, rightm, leftm);
 
-    edgecodes := NotRadixSort(edgecodes, c);  # TODO change back to Radix
+    edgecodes := RadixSort(edgecodes, c);
     # TODO can avoid running RadixSort on the final pass if that saves time
   od;
 
