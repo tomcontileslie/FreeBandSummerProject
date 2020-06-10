@@ -58,8 +58,7 @@ StringToStandardListOfPosInts := function(string)
 end;
 
 Right := function(w, k)
-  local max_char, right, i, j, subword_content_size,
-  multiplicity, length_w;
+  local max_char, right, i, j, content_size, multiplicity, length_w;
   # We need to check that w is of the form we agreed. I think in the meeting
   # on Monday we agreed that we will use the list of positive integers
   # representation.
@@ -96,10 +95,10 @@ Right := function(w, k)
   # iteration, and then we inherit the first piece of the next subword,
   # starting from the correct place.
 
-  j                    := 0;
-  right                := [];
-  subword_content_size := 0;
-  multiplicity         := List([1 .. Maximum(w)], x -> 0);
+  j            := 0;
+  right        := [];
+  content_size := 0;
+  multiplicity := ListWithIdenticalEntries(Maximum(w), 0);
 
   # subword_content_size keeps track of the number of distinct characters
   # in the subword of w we are looking at in the 'sliding window'. We keep
@@ -131,16 +130,16 @@ Right := function(w, k)
         # If we just deleted the last instance of the character corresponding
         # to w[i - 1] from the subword, then the content size of the subword
         # has decreased by 1.
-        subword_content_size := subword_content_size - 1;
+        content_size := content_size - 1;
       fi;
     fi;
     while j < length_w and
-        (multiplicity[w[j + 1]] <> 0 or subword_content_size < k) do
+        (multiplicity[w[j + 1]] <> 0 or content_size < k) do
       j := j + 1;
       if multiplicity[w[j]] = 0 then
         # If w[j] has zero multiplicity in the subword, then by adding it
         # we increase the content size by 1.
-        subword_content_size := subword_content_size + 1;
+        content_size := content_size + 1;
       fi;
       multiplicity[w[j]] := multiplicity[w[j]] + 1;
       # The multiplicity of w[j], having just been added to our subword, is
@@ -155,7 +154,7 @@ Right := function(w, k)
     # If the loop ended with content_size_k, then either we reached the end of
     # w, or met a new letter and stopped. In either case, the k-right interval
     # starting at i is [i .. j].
-    if subword_content_size = k then
+    if content_size = k then
       right[i] := j;
     else
       right[i] := fail;
@@ -175,8 +174,7 @@ Left := function(w, k)
   for i in w do
     if not IsPosInt(i) then
       ErrorNoReturn("expected first argument to be a list of positive integers");
-    fi;
-    if i > max_char + 1 then
+    elif i > max_char + 1 then
       ErrorNoReturn("expected first argument w to be a list of positive ",
                     "integers which contains at least one instance of each ",
                     "integer in [1 .. Maximum(w)], and whose entries are ",
@@ -196,10 +194,6 @@ Left := function(w, k)
   od;
   return left;
 end;
-
-# It might be slightly more effective if this were replaced with an analogue of
-# the Right method, but since I've still got a few ideas for tidying Right up,
-# I'll wait until then to do this.
 
 LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
   local n, outr, outl, i;
