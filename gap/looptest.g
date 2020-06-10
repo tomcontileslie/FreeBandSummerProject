@@ -1,0 +1,53 @@
+LoadPackage("semigroups");
+Read("freeband.g");
+
+ListWords := function(gens, len)
+  local n, words, prev, check, j, i, k;
+  n     := gens ^ len;
+  words := [ListWithIdenticalEntries(len, 1)];
+  for i in [2 .. n] do
+
+    prev := ShallowCopy(words[i - 1]);
+
+    check := true;
+    j     := len;
+    while check do
+      if prev[j] = gens then
+        j := j - 1;
+      else
+        check := false;
+      fi;
+    od;
+
+    prev[j] := prev[j] + 1;
+
+    if j < len then
+      for k in [j + 1 .. len] do
+        prev[k] := 1;
+      od;
+    fi;
+
+    Add(words, prev);
+  od;
+
+  return words;
+
+end;
+
+TestAllWords := function(gens, len)
+  local S, words, n, og_test, fb_test, i, j;
+  S     := FreeBand(gens);
+  words := ListWords(gens, len);
+  n     := Length(words);
+  for i in [1 .. n] do
+    for j in [i .. n] do
+      og_test := EvaluateWord(GeneratorsOfSemigroup(S), words[i]) =
+                 EvaluateWord(GeneratorsOfSemigroup(S), words[j]);
+      fb_test := EqualInFreeBand(words[i], words[j]);
+      if og_test <> fb_test then
+        Print("Error on ", words[i], words[j]);
+      fi;
+    od;
+  od;
+  return true;
+end;
