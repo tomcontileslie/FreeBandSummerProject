@@ -329,3 +329,78 @@ RadixSort := function(level, k)
 
   return result;
 end;
+
+NotRadixSort := function(level, c)
+  local set;
+  # Just a placeholder which also sorts, until a stable version of Radix
+  # is available.
+  set := Set(level);
+  return List(level, x -> Position(set, x));
+end;
+
+EqualInFreeBand := function(w1, w2)
+  local s1, dollar, w, c, rightk, leftk, edgecodes, rightm, leftm, k;
+  #
+  # This function implements Radoszewski and Rytter's O(n . |Sigma|) algorithm
+  # for testing equivalence of words in a free band.
+  #
+  # The function first converts formats into standard lists of pos ints.
+  # uses the following local variables:
+  #
+  # w         - the standard list of pos ints (with separator)
+  # c         - size of the alphabet (counting additional dollar separator)
+  # n         - the length of the concatenated word + separator
+  # k         - the current level.
+  # edgecodes - a list of length 2n with an encoding for each vertex.
+  #
+  if not (IsList(w1) and IsList(w2)) then
+    ErrorNoReturn("expected two lists of positive integers");
+  fi;
+
+  s1 := Set(w1);
+  if s1 <> Set(w2) then
+    return false;  # different contents <=> not equal
+  fi;
+
+  if Length(s1) = 0 or Length(s1) = 1 then
+    return true;  # both cases trivial
+  fi;
+
+  dollar := Maximum(w1) + 1;  # value definitely unused in w1, w2
+  w      := ListOfPosIntsToStandardListOfPosInts(Concatenation(w1,
+                                                              [dollar],
+                                                               w2));
+  c := Length(s1) + 1;
+
+  # if we've reached this point, then w contains at least 3 chars: c >= 3.
+
+  rightk    := [];
+  leftk     := [];
+  edgecodes := [];
+
+  for k in [1 .. c - 1] do
+    rightm := rightk;
+    leftm  := leftk;  # lists from prev level
+
+    rightk := Right(w, k);
+    leftk  := Left(w, k);
+
+    edgecodes := LevelEdges(w, k, edgecodes, rightk, leftk, rightm, leftm);
+
+    edgecodes := NotRadixSort(edgecodes, c);  # TODO change back to Radix
+    # TODO can avoid running RadixSort on the final pass if that saves time
+  od;
+
+  # now check whether the right-k of the first character (i.e. the word up
+  # to the separator) is the same as the right-k of the first character
+  # directly after the separator.
+  return edgecodes[1] = edgecodes[Length(w1) + 2];
+end;
+
+# TODO correct the function. It currently says these are not equal:
+# 1223434321; 123434321
+
+# previous pairs of equal words which returned erroneous answers, now
+# corrected:
+# 1212 and 12
+# 12343421 and 123424321
