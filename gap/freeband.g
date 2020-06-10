@@ -266,58 +266,50 @@ end;
 # output "result" a list of integers between 1 and n,  such that
 # two entries in A are the same if and only if the
 # corresponding entries in result are the same.
-RadixSort := function(level, k)
-  local B, result, count_sort, i, n, c;
+RadixSort := function(level_edges, alphabet_size)
+  local B, result, count_sort, i, n, counter;
 
-  count_sort := function(B, i, radix, level)
-    local C, j, swap, temp;
+  count_sort := function(B, i, radix)
+    local counts, j, result;
 
-    swap := function(u, v, B)
-      local t;
-      t    := B[u];
-      B[u] := B[v];
-      B[v] := t;
-    end;
-
-    C := ListWithIdenticalEntries(radix, 0);
+    counts := ListWithIdenticalEntries(radix + 1, 0);
     for j in [1 .. Length(B)] do
-      if level[B[j]][i] <> fail then
-        C[level[B[j]][i]] := C[level[B[j]][i]] + 1;
+      if level_edges[B[j]][i] <> fail then
+        counts[level_edges[B[j]][i]] := counts[level_edges[B[j]][i]] + 1;
+      else
+        counts[radix + 1] := counts[radix + 1] + 1;
       fi;
     od;
-    for j in [2 .. radix] do
-      C[j] := C[j] + C[j - 1];
+    for j in [2 .. radix + 1] do
+      counts[j] := counts[j] + counts[j - 1];
     od;
-    j := Length(B);
-    while j <> 0 do
-      while B[j] > 0 and level[B[j]][i] <> fail and C[level[B[j]][i]] <> j do
-        temp              := C[level[B[j]][i]];
-        C[level[B[j]][i]] := C[level[B[j]][i]] - 1;
-        swap(j, temp, B);
-        B[temp] := -B[temp];
-      od;
-      j := j - 1;
+    result := [1 .. Length(B)];
+    for j in [Length(B), Length(B) - 1 .. 1] do
+      if level_edges[B[j]][i] <> fail then
+        result[counts[level_edges[B[j]][i]]] := B[j];
+        counts[level_edges[B[j]][i]]         := counts[level_edges[B[j]][i]] - 1;
+      else
+        result[counts[radix + 1]] := B[j];
+        counts[radix + 1]         := counts[radix + 1] - 1;
+      fi;
     od;
-    for j in [1 .. Length(B)] do
-      B[j] := AbsInt(B[j]);
-    od;
-    return B;
+    return result;
   end;
 
-  n := Length(level);
+  n := Length(level_edges);
   B := [1 .. n];
-  B := count_sort(B, 1, n, level);
-  B := count_sort(B, 2, k, level);
-  B := count_sort(B, 3, k, level);
-  B := count_sort(B, 4, n, level);
+  B := count_sort(B, 1, n);
+  B := count_sort(B, 2, alphabet_size);
+  B := count_sort(B, 3, alphabet_size);
+  B := count_sort(B, 4, n);
 
-  result := ListWithIdenticalEntries(n, fail);
-  c      := 1;
+  result  := ListWithIdenticalEntries(n, fail);
+  counter := 1;
   for i in [2 .. n] do
-    if level[B[i]] <> level[B[i - 1]] then
-      c := c + 1;
+    if level_edges[B[i]] <> level_edges[B[i - 1]] then
+      counter := counter + 1;
     fi;
-    result[B[i]] := c;
+    result[B[i]] := counter;
   od;
   result[B[1]] := 1;
 
