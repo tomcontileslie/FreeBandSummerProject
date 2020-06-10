@@ -255,7 +255,7 @@ LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
       fi;
 
       if leftk[i] <> fail then
-        Add(outl, [radix[leftk[i]], w[rightm[leftk[i] + 1]],
+        Add(outl, [radix[leftk[i]], w[rightm[leftk[i]] + 1],
                    w[leftm[i] - 1], radix[i + n]]);
       else
         Add(outl, [fail, fail, fail, fail]);
@@ -397,10 +397,8 @@ EqualInFreeBand := function(w1, w2)
   return edgecodes[1] = edgecodes[Length(w1) + 2];
 end;
 
-# TODO correct the function. It currently says these are not equal:
-# 1223434321; 123434321
-
 # previous pairs of equal words which returned erroneous answers, now
 # corrected:
 # 1212 and 12
 # 12343421 and 123424321
+# 1223 and 123
