@@ -249,7 +249,7 @@ LevelEdges := function(w, k, radix, rightk, leftk, rightm, leftm)
       fi;
 
       if leftk[i] <> fail then
-        Add(outl, [radix[leftk[i]], w[rightm[leftk[i] + 1]],
+        Add(outl, [radix[leftk[i]], w[rightm[leftk[i]] + 1],
                    w[leftm[i] - 1], radix[i + n]]);
       else
         Add(outl, [fail, fail, fail, fail]);
@@ -315,3 +315,101 @@ RadixSort := function(level_edges, alphabet_size)
 
   return result;
 end;
+
+NotRadixSort := function(level, c)
+  local set;
+  # Just a placeholder which also sorts, until a stable version of Radix
+  # is available.
+  set := Set(level);
+  return List(level, x -> Position(set, x));
+end;
+
+EqualInFreeBand := function(w1, w2)
+  local dollar, l1, l2, w, c, check, rightk, leftk,
+        edgecodes, rightm, leftm, i, k;
+  #
+  # This function implements Radoszewski and Rytter's O(n . |Sigma|) algorithm
+  # for testing equivalence of words in a free band.
+  #
+  # The function first converts formats into standard lists of pos ints.
+  # uses the following local variables:
+  #
+  # w         - the standard list of pos ints (with separator)
+  # c         - size of the alphabet (counting additional dollar separator)
+  # n         - the length of the concatenated word + separator
+  # k         - the current level.
+  # edgecodes - a list of length 2n with an encoding for each vertex.
+  #
+  if not (IsList(w1) and IsList(w2)) then
+    ErrorNoReturn("expected two lists of positive integers");
+  fi;
+
+  if IsEmpty(w1) or IsEmpty(w2) then
+    # if one list is empty, the other has to be too.
+    return IsEmpty(w1) and IsEmpty(w2);
+  fi;
+
+  dollar := Maximum(Maximum(w1), Maximum(w2)) + 1;
+  l1     := Length(w1);
+  l2     := Length(w2);
+
+  w := Concatenation(w1, [dollar], w2);
+  w := ListOfPosIntsToStandardListOfPosInts(w);
+
+  # create a list with as many "false" entries as there are different
+  # characters in w1: we find this by finding the number that the dollar
+  # got mapped to, and subtracting 1.
+  # run through w2 and set these to "true" progressively as we see the
+  # corresponding numbers.
+  c     := w[l1 + 1];
+  check := ListWithIdenticalEntries(c, false);
+  for i in [l1 + 2 .. l1 + 1 + l2] do
+    if w[i] >= c then
+      # then w2 contains a character not in w1
+      return false;
+    else
+      check[w[i]] := true;
+    fi;
+  od;
+  if SizeBlist(check) <> c - 1 then
+    return false;
+  fi;
+
+  # If we got this far then the two lists have the same content.
+  # This was O(n), faster than testing Set(w1), Set(w2) for equality.
+  # there is one more easy check:
+  if c = 2 then
+    # in this case both lists contain lots of copies of only one character.
+    return true;
+  fi;
+
+  # if we've reached this point, then w contains at least 3 chars: c >= 3.
+
+  rightk    := [];
+  leftk     := [];
+  edgecodes := [];
+
+  for k in [1 .. c - 1] do
+    rightm := rightk;
+    leftm  := leftk;  # lists from prev level
+
+    rightk := Right(w, k);
+    leftk  := Left(w, k);
+
+    edgecodes := LevelEdges(w, k, edgecodes, rightk, leftk, rightm, leftm);
+
+    edgecodes := RadixSort(edgecodes, c);
+    # TODO can avoid running RadixSort on the final pass if that saves time
+  od;
+
+  # now check whether the right-k of the first character (i.e. the word up
+  # to the separator) is the same as the right-k of the first character
+  # directly after the separator.
+  return edgecodes[1] = edgecodes[l1 + 2];
+end;
+
+# previous pairs of equal words which returned erroneous answers, now
+# corrected:
+# 1212 and 12
+# 12343421 and 123424321
+# 1223 and 123
