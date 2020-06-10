@@ -276,7 +276,7 @@ RadixSort := function(level, k)
   local B, result, count_sort, i, n, c;
 
   count_sort := function(B, i, radix, level)
-    local C, j, swap;
+    local C, j, swap, temp;
 
     swap := function(u, v, B)
       local t;
@@ -297,9 +297,10 @@ RadixSort := function(level, k)
     j := Length(B);
     while j <> 0 do
       while B[j] > 0 and level[B[j]][i] <> fail and C[level[B[j]][i]] <> j do
-        B[j] := -B[j];
-        swap(j, C[level[B[j]][i]], B);
+        temp              := C[level[B[j]][i]];
         C[level[B[j]][i]] := C[level[B[j]][i]] - 1;
+        swap(j, temp, B);
+        B[temp] := -B[temp];
       od;
       j := j - 1;
     od;
@@ -311,10 +312,10 @@ RadixSort := function(level, k)
 
   n := Length(level);
   B := [1 .. n];
-  B := count_sort(B, 1, n);
-  B := count_sort(B, 2, k);
-  B := count_sort(B, 3, k);
-  B := count_sort(B, 4, n);
+  B := count_sort(B, 1, n, level);
+  B := count_sort(B, 2, k, level);
+  B := count_sort(B, 3, k, level);
+  B := count_sort(B, 4, n, level);
 
   result := ListWithIdenticalEntries(n, fail);
   c      := 1;
