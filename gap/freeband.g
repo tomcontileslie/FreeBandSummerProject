@@ -324,9 +324,31 @@ NotRadixSort := function(level, c)
   return List(level, x -> Position(set, x));
 end;
 
-EqualInFreeBand := function(w1, w2)
-  local dollar, l1, l2, w, c, check, rightk, leftk,
-        edgecodes, rightm, leftm, i, k;
+StripFreeBandString := function(w)
+  local last, out, i;
+  # removes consecutive duplicates in a list
+  if not IsList(w) then
+    ErrorNoReturn("expected a list, got ", w);
+  fi;
+  if Length(w) = 0 or Length(w) = 1 then
+    return w;
+  fi;
+
+  last := w[1];
+  out  := [last];
+  for i in [2 .. Length(w)] do
+    if w[i] <> last then
+      Add(out, w[i]);
+      last := w[i];
+    fi;
+  od;
+  return out;
+end;
+
+EqualInFreeBand := function(w1_in, w2_in)
+  local w1, w2, dollar, l1, l2, w, c, check,
+        rightk, leftk, edgecodes, rightm, leftm, i, k;
+
   #
   # This function implements Radoszewski and Rytter's O(n . |Sigma|) algorithm
   # for testing equivalence of words in a free band.
@@ -340,13 +362,23 @@ EqualInFreeBand := function(w1, w2)
   # k         - the current level.
   # edgecodes - a list of length 2n with an encoding for each vertex.
   #
-  if not (IsList(w1) and IsList(w2)) then
+
+  if not (IsList(w1_in) and IsList(w2_in)) then
     ErrorNoReturn("expected two lists of positive integers");
   fi;
 
-  if IsEmpty(w1) or IsEmpty(w2) then
+  if IsEmpty(w1_in) or IsEmpty(w2_in) then
     # if one list is empty, the other has to be too.
     return IsEmpty(w1) and IsEmpty(w2);
+  fi;
+
+  # now remove duplicate letters in both inputs
+  w1 := StripFreeBandString(w1_in);
+  w2 := StripFreeBandString(w2_in);
+
+  if w1 = w2 then
+    # trivial check
+    return true;
   fi;
 
   dollar := Maximum(Maximum(w1), Maximum(w2)) + 1;
