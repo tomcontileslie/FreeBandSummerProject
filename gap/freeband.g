@@ -369,7 +369,7 @@ EqualInFreeBand := function(w1_in, w2_in)
 
   if IsEmpty(w1_in) or IsEmpty(w2_in) then
     # if one list is empty, the other has to be too.
-    return IsEmpty(w1) and IsEmpty(w2);
+    return IsEmpty(w1_in) and IsEmpty(w2_in);
   fi;
 
   # now remove duplicate letters in both inputs
