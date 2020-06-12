@@ -100,3 +100,11 @@ S := [S1, S2, S3, S4, S5];
 H := [[map21, map31], [map52], [map43, map53], [], []];
 
 sl := StrongSemilatticeOfSemigroups(D, S, H);
+
+D2 := Digraph([[2], [3, 4], [], []]);
+
+S2 := [S1, S3, S4, S5];
+
+H2 := [[map31], [map43, map53], [], []];
+
+sl2 := StrongSemilatticeOfSemigroups(D2, S2, H2);
