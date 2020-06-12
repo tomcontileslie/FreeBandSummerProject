@@ -51,3 +51,31 @@ TestAllWords := function(gens, len)
   od;
   return true;
 end;
+
+# Generate a random list of length "len" whose entries
+# are numbers in the range [1 .. "gens"]
+RandomWordOverAlphabet := function(gens, len)
+  return List([1 .. len], x -> Random(1, gens));
+end;
+
+# Given a word "word", repeatedly choose a random substring
+# and then duplicates the substring in the word. This is repeated
+# a total "repeats" number of times. The resulting string
+# is equivalent to the original one in the free band.
+# Currently chooses substring to extend by only uniformly at random
+ElongateWordInFreeBand := function(word, repeats)
+  local l, r, t, i, result;
+  result := ShallowCopy(word);
+  for i in [1 .. repeats] do
+    l := Random(1, Length(result));
+    r := Random(1, Length(result));
+    if l > r then
+      t := l;
+      l := r;
+      r := t;
+    fi;
+    result := Concatenation(result{[1 .. r]}, result{[l .. r]},
+                            result{[r + 1 .. Length(result)]});
+  od;
+  return result;
+end;
