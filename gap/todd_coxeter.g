@@ -1,17 +1,14 @@
 # This function takes a coset index and a word, and moves the coset index
 # through the word.
 
-
-
-
-ToddCoxeter := function(A, R)
+ToddCoxeter := function(N, R)
   local tau, new_coset, push_relation, process_coincidences,
   coincidences, i, j, k, active_cosets, table, char, pair, n,
-  word, coset;
+  word, coset, A;
 
   tau := function(coset, word)
     local char;
-    Print("Calling tau. coset: ", coset, "  word: ", word, "\n");
+    # Print("Calling tau. coset: ", coset, "  word: ", word, "\n");
     if not IsList(word) then
       # We want to be able to ask for things like tau(1, 1), without needing
       # to type tau(1, [1]).
@@ -39,10 +36,10 @@ ToddCoxeter := function(A, R)
   end;
 
   new_coset := function(coset, char)
-    Print("Calling new_coset \n");
+    # Print("Calling new_coset \n");
     if tau(coset, char) = 0 then
-      Print("The action of ", char, " on ", coset, " is undefined. Defining ");
-      Print("it to be ", k, "\n");
+      # Print("The action of ", char, " on ", coset, " is undefined. Defining ");
+      # Print("it to be ", k, "\n");
       table[coset][char] := k;
       Add(active_cosets, k);
       Add(table, ListWithIdenticalEntries(Length(A), 0));
@@ -80,26 +77,26 @@ ToddCoxeter := function(A, R)
       # a on the action of u_1 on coset is equal to the action of v on coset.
       # In other words, table[tau(coset, u_1)][a] := tau(coset, v).
       table[tau(coset, u_1)][a] := tau(coset, v);
-      Print("Pushing the relation updated the table \n");
+      # Print("Pushing the relation updated the table \n");
     elif (tau(coset, v) = 0 and tau(coset, u) <> 0
           and tau(coset, v_1) <> 0) then
       # This is the exact dual of the above scenario with u <-> v, u_1 <-> v_1
       # and a <-> b.
       table[tau(coset, v_1)][b] := tau(coset, u);
-      Print("Pushing the relation updated the table \n");
+      # Print("Pushing the relation updated the table \n");
     elif (tau(coset, u) <> 0 and tau(coset, v) <> 0
         and tau(coset, u) <> tau(coset, v)) then
       # In this case, the actions of u and v on coset are both defined, yet not
       # equal. However, since u = v is one of our relations, u and v should have
-      # equal actions on every coset, and so we need these cosets representing the
-      # actions of u and v to be equal. We add this equality to our list of
+      # equal actions on every coset, and so we need these cosets representing
+      # the actions of u and v to be equal. We add this equality to our list of
       # coincidences to be processed.
       Add(coincidences, [tau(coset, u), tau(coset, v)]);
-      Print("Pushing the relation added a coincidence \n");
+      # Print("Pushing the relation added a coincidence \n");
     fi;
     # TODO: Add a suitable comment here, I think saying something like 'if none
-    # of the above conditions are met, then we've learnt nothing new from applying
-    # this relation to this coset.
+    # of the above conditions are met, then we've learnt nothing new from
+    # applying this relation to this coset.
 
     # TODO: What if the actions of u and v on coset are undefined, but so are
     # the actions of u_1 and v_1 on coset? What do we do then? Ought we to
@@ -176,7 +173,7 @@ ToddCoxeter := function(A, R)
     od;
   end;
 
-
+  A             := [1 .. N];
   k             := 2;
   active_cosets := [1];
   table         := [[]];
@@ -187,28 +184,31 @@ ToddCoxeter := function(A, R)
   n := 0;
   repeat
     n := n + 1;
-    Print("Current coset (n): ", n, "\n");
+    # Print("Current coset (n): ", n, "\n");
     if n in active_cosets then
       # Only do anything if the current coset is active.
       for char in A do
         new_coset(n, char);
         for coset in active_cosets do
           for pair in R do
-            Print("Pushing relation ", pair, " on ", n, "\n");
+            # Print("Pushing relation ", pair, " on ", n, "\n");
             push_relation(coset, pair[1], pair[2]);
           od;
         od;
       od;
     fi;
-    Print("Processing coincidences \n");
+    # Print("Processing coincidences \n");
     process_coincidences();
-    Print("\n \n");
+    # Print("\n \n");
   until n = k;  # When we have reached the end of our active cosets, stop.
   for pair in R do
     if Length(pair[1]) = 0 or Length(pair[2]) = 0 then
       return Length(active_cosets);
+      # If one of the relations contains the empty word, then the semigroup
+      # defined by the presentation contains the empty word.
     fi;
   od;
   return Length(active_cosets) - 1;
+  # Returning the size of the semigroup seems sensible for testing it works
 end;
 
