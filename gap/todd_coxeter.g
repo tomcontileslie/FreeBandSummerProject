@@ -1,6 +1,3 @@
-# This function takes a coset index and a word, and moves the coset index
-# through the word.
-
 ToddCoxeter := function(N, R)
   local tau, new_coset, push_relation, process_coincidences,
   coincidences, i, j, k, active_cosets, table, char, pair, n,
@@ -41,7 +38,7 @@ ToddCoxeter := function(N, R)
       # Print("The action of ", char, " on ", coset, " is undefined. Defining ");
       # Print("it to be ", k, "\n");
       table[coset][char] := k;
-      Add(active_cosets, k);
+      active_cosets[k] := true;
       Add(table, ListWithIdenticalEntries(Length(A), 0));
       k := k + 1;
     fi;
@@ -94,19 +91,6 @@ ToddCoxeter := function(N, R)
       Add(coincidences, [tau(coset, u), tau(coset, v)]);
       # Print("Pushing the relation added a coincidence \n");
     fi;
-    # TODO: Add a suitable comment here, I think saying something like 'if none
-    # of the above conditions are met, then we've learnt nothing new from
-    # applying this relation to this coset.
-
-    # TODO: What if the actions of u and v on coset are undefined, but so are
-    # the actions of u_1 and v_1 on coset? What do we do then? Ought we to
-    # consider these cases? Perhaps this will be clear to me after I read the
-    # rest of the code, though.
-
-    # TODO: Isn't it computationally wasteful to be computing the actions of
-    # u and u_1 separetely? To apply u to coset, we simply apply u_1 and then
-    # apply a, so we could save some computation here. The same applies to v
-    # and v_1.
   end;
 
   process_coincidences := function()
@@ -143,7 +127,7 @@ ToddCoxeter := function(N, R)
       # The effect of the above is basically making the rows of i and j in the
       # table equal. Now, we need to work through the table and replace every
       # instance of j (the larger of the two) with i.
-      for coset in active_cosets do
+      for coset in ListBlist([1 .. k - 1], active_cosets) do
         for char in A do
           if tau(coset, char) = j then
             # If the action of generator char on coset is j, then we replace
@@ -160,13 +144,15 @@ ToddCoxeter := function(N, R)
       for pair in coincidences do
         if pair[1] = j then
           pair[1] := i;
-        elif pair[2] = j then
+        fi;
+        if pair[2] = j then
           pair[2] := i;
         fi;
       od;
       # To finish processing the coincidence, we delete j from our list of
       # active cosets. We then delete the coincidence from our list.
-      Remove(active_cosets, Position(active_cosets, j));
+      active_cosets[j] := false;
+      # Remove(active_cosets, Position(active_cosets, j));
       # TODO: This could perhaps be improved by having a separete list
       # keep track of the indices of cosets in the list active_cosets.
       Remove(coincidences, 1);
@@ -175,7 +161,7 @@ ToddCoxeter := function(N, R)
 
   A             := [1 .. N];
   k             := 2;
-  active_cosets := [1];
+  active_cosets := [true];
   table         := [[]];
   coincidences  := [];
   for char in A do
@@ -185,11 +171,11 @@ ToddCoxeter := function(N, R)
   repeat
     n := n + 1;
     # Print("Current coset (n): ", n, "\n");
-    if n in active_cosets then
+    if active_cosets[n] then
       # Only do anything if the current coset is active.
       for char in A do
         new_coset(n, char);
-        for coset in active_cosets do
+        for coset in ListBlist([1 .. k - 1], active_cosets) do
           for pair in R do
             # Print("Pushing relation ", pair, " on ", n, "\n");
             push_relation(coset, pair[1], pair[2]);
@@ -200,15 +186,14 @@ ToddCoxeter := function(N, R)
     # Print("Processing coincidences \n");
     process_coincidences();
     # Print("\n \n");
-  until n = k;  # When we have reached the end of our active cosets, stop.
+  until n = k - 1;  # When we have reached the end of our active cosets, stop.
   for pair in R do
     if Length(pair[1]) = 0 or Length(pair[2]) = 0 then
-      return Length(active_cosets);
+      return Length(ListBlist([1 .. k - 1], active_cosets));
       # If one of the relations contains the empty word, then the semigroup
       # defined by the presentation contains the empty word.
     fi;
   od;
-  return Length(active_cosets) - 1;
-  # Returning the size of the semigroup seems sensible for testing it works
+  return Length(ListBlist([1 .. k - 1], active_cosets)) - 1;
 end;
 
