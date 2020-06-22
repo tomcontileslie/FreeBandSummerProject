@@ -7,8 +7,9 @@ elts  := Elements(fb);
 eltsf := List(elts, x -> Factorization(fb, x));
 fbgs  := GeneratorsOfSemigroup(fb);
 
-# I think this generates the full thing
-eltsf_alt := [[1],
+# this doesn't generate all endos but about 1/4 of them
+# for which we now have a small number of generators.
+eltsf_old := [[1],
               [2],
               [3],
               [1, 2],
@@ -38,6 +39,43 @@ eltsf_alt := [[1],
               [1, 2, 3, 2, 1, 3],
               [1, 2, 3, 2, 1, 3, 1]];
 
+# CONSIDERATIONS TO REMOVE SOME REDUNDANCY FROM THE TUPLE ITER
+# - for a tuple [u, v, w], we can do:
+#           [gen, gen, gen] [u, v, w] [gen, gen, gen]
+#   to get it into a form where the first element is (not
+#   strictly) shorter than the second, same for third, and
+#   also s.t. the first element is in standard form.
+# - we don't need repeats: we can just pre-map by e.g. [1, 2, 2].
+# - we don't need endos generates in eltsf_old since we now have
+#   a set of generators for them.
+
+# this will give us the standard form
+# WARNING this is dependent on another file
+Read("../freeband.g");
+
+tuple_iter := [];
+for i in eltsf do
+  if ListOfPosIntsToStandardListOfPosInts(i) = i then
+    for j in eltsf do
+      if Length(j) >= Length(i) and j <> i then
+        for k in eltsf do
+          if Length(k) >= Length(j) and k <> j and k <> i then
+            if not (j in eltsf_old and k in eltsf_old) then
+              Add(tuple_iter, [i, j, k]);
+            fi;
+          fi;
+        od;
+      fi;
+    od;
+  fi;
+od;
+
+# WARNING: this may have neglected some corner cases where i is
+# one of the longest words, and where there are repeats.
+# Can probably add the remaining cases manually
+#
+#
+#
 # don't actually need this
 PositionInElts := function(fb, elts, eltsf, fbgs, list)
   return Position(elts, EvaluateWord(fbgs, list));
@@ -59,21 +97,28 @@ EndoListToEndoTransformation := function(fb, eltsf, fbgs, tuple)
   return Transformation(trans);
 end;
 
-AllTransformationsOfEndoMonoid3 := function(fb, eltsf, fbgs, eltsf_alt)
-  local gensofm, counter, tuple, i, j, k;
+EndoTransformationToEndoList := function(fb, eltsf, fbgs, trans)
+  return [eltsf[1 ^ trans],
+          eltsf[54 ^ trans],
+          eltsf[107 ^ trans]];
+end;
+
+AllTransformationsOfEndoMonoid := function(fb, eltsf, fbgs, tuple_iter)
+  local gensofm, counter, marks, n, tuple;
   gensofm := [];
   counter := 0;
-  for i in eltsf_alt do
+  marks   := ListWithIdenticalEntries(100, false);
+  n       := Length(tuple_iter);
+
+  for tuple in tuple_iter do
     counter := counter + 1;
-    Print("\nOn ", counter, "/29\n");
-    for j in eltsf_alt do
-      Print("x");
-      for k in eltsf_alt do
-        tuple := [i, j, k];
-        Add(gensofm, EndoListToEndoTransformation(fb, eltsf, fbgs, tuple));
-      od;
-    od;
+    if not marks[Int(100 * counter / n) + 1] then
+      marks[Int(100 * counter / n) + 1] := true;
+      Print(Int(100 * counter / n), "%\n");
+    fi;
+    Add(gensofm, EndoListToEndoTransformation(fb, eltsf, fbgs, tuple));
   od;
+
   return gensofm;
 end;
 
@@ -107,4 +152,18 @@ AllOrderTwoProductsFromTo := function(generators, from, to)
     od;
   od;
   return out;
+end;
+
+UpdateSemigroup := function(T, gens)
+  while not IsEmpty(gens) do
+    gens := Filtered(gens, x -> not x in T);
+    gens := Shuffle(gens);
+    Sort(gens, {x, y} -> RankOfTransformation(x, 159) >
+                         RankOfTransformation(y, 159));
+    if not IsEmpty(gens) then
+      T := ClosureMonoid(T, gens[1]);
+    fi;
+    Print("The number of generators left is ", Length(gens), "\n");
+    GASMAN("collect");
+  od;
 end;
