@@ -1,18 +1,15 @@
 ToddCoxeterBand := function(N, R)
-  local new_coset, tauf, uat, push_relation, process_coincidences,
-  A, k, k0, active_cosets, table, coincidences, parents, edges, n, word,
+  local new_coset, tauf, canon, push_relation, process_coincidences,
+  A, F, X, k, active_cosets, table, coincidences, words, n, word,
   pair, char, coset;
 
   new_coset := function(coset, char)
     # Print("Calling new_coset \n");
     if table[coset][char] = 0 then
-      # Print("The action of ", char, " on ", coset, " is undefined. Defining ");
-      # Print("it to be ", k, "\n");
       table[coset][char] := k;
       active_cosets[k]   := true;
       Add(table, ListWithIdenticalEntries(Length(A), 0));
-      Add(parents, coset);
-      Add(edges, char);
+      Add(words, Concatenation(words[coset], [char]));
       k := k + 1;
     fi;
   end;
@@ -33,15 +30,22 @@ ToddCoxeterBand := function(N, R)
     return coset;
   end;
 
-  uat := function(coset)
-    local c, word;
-    c    := coset;
-    word := [];
-    while c > 1 do
-      Add(word, edges[c]);
-      c := parents[c];
-    od;
-    return Reversed(word);
+  # uat := function(coset)
+  #   # now obsolete as full words are stored
+  #   # TODO delete me
+  #   local c, word;
+  #   c    := coset;
+  #   word := [];
+  #   while c > 1 do
+  #     Add(word, edges[c]);
+  #     c := parents[c];
+  #   od;
+  #   return Reversed(word);
+  # end;
+
+  canon := function(word)
+    # expresses a word in free band-canonical form.
+    return Factorization(F, EvaluateWord(X, word));
   end;
 
   push_relation := function(coset, u, v)
@@ -97,12 +101,12 @@ ToddCoxeterBand := function(N, R)
 
   A             := [1 .. N];
   F             := FreeBand(N);
+  X             := GeneratorsOfSemigroup(F);
   k             := 2;
   active_cosets := [true];
   table         := [[]];
   coincidences  := [];
-  parents       := [0];
-  edges         := [0];
+  words         := [[]];
   for char in A do
     table[1][char] := 0;
   od;
@@ -110,7 +114,6 @@ ToddCoxeterBand := function(N, R)
   repeat
 
     n  := n + 1;
-    k0 := k;
 
     # only do anything if the current coset is active
     if active_cosets[n] then
@@ -126,8 +129,8 @@ ToddCoxeterBand := function(N, R)
       od;
 
       # push the coset through every known implicit relation
-      for coset in ListBlist([1 .. k0 - 1], active_cosets{[1 .. k0 - 1]}) do
-        word := uat(coset);
+      for coset in ListBlist([1 .. k - 1], active_cosets{[1 .. k - 1]}) do
+        word := words[coset];
         pair := [Concatenation(word, word), word];
         push_relation(n, pair[1], pair[2]);
         # process_coincidences();
