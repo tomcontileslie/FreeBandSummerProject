@@ -83,7 +83,7 @@ ToddCoxeter := function(N, R)
       i := Minimum(coincidences[1]);
       j := Maximum(coincidences[1]);
       if i = j then
-        break;
+        return;
       fi;
       for char in A do
         if tau(j, char) <> 0 then
