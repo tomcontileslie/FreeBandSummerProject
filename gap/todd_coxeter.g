@@ -1,7 +1,7 @@
 ToddCoxeter := function(N, R)
   local tau, new_coset, push_relation, process_coincidences,
   coincidences, i, j, k, active_cosets, table, char, pair, n,
-  word, coset, A;
+  word, coset, A, parents, edges, uat;
 
   tau := function(coset, word)
     local char;
@@ -21,6 +21,17 @@ ToddCoxeter := function(N, R)
     return coset;
   end;
 
+  uat := function(coset)
+    local c, word;
+    c    := coset;
+    word := [];
+    while c > 1 do
+      Add(word, edges[c]);
+      c := parents[c];
+    od;
+    return Reversed(word);
+  end;
+
   new_coset := function(coset, char)
     # Print("Calling new_coset \n");
     if tau(coset, char) = 0 then
@@ -29,6 +40,8 @@ ToddCoxeter := function(N, R)
       table[coset][char] := k;
       active_cosets[k]   := true;
       Add(table, ListWithIdenticalEntries(Length(A), 0));
+      Add(parents, coset);
+      Add(edges, char);
       k := k + 1;
     fi;
   end;
@@ -48,8 +61,7 @@ ToddCoxeter := function(N, R)
       b   := v[Length(v)];
     fi;
     if (tau(coset, u) = 0 and tau(coset, v) <> 0 and tau(coset, u_1) <> 0) then
-      words, table[tau(coset, u_1)][a] := tau(coset, v).
-      table[tau(coset, u_1)][a]        := tau(coset, v);
+      table[tau(coset, u_1)][a] := tau(coset, v);
       # Print("Pushing the relation updated the table \n");
     elif (tau(coset, v) = 0 and tau(coset, u) <> 0
           and tau(coset, v_1) <> 0) then
@@ -107,6 +119,8 @@ ToddCoxeter := function(N, R)
   active_cosets := [true];
   table         := [[]];
   coincidences  := [];
+  parents       := [0];
+  edges         := [0];
   for char in A do
     table[1][char] := 0;
   od;
@@ -129,6 +143,7 @@ ToddCoxeter := function(N, R)
     process_coincidences();
     # Print("\n \n");
   until n = k - 1;  # When we have reached the end of our active cosets, stop.
+  Error();
   for pair in R do
     if Length(pair[1]) = 0 or Length(pair[2]) = 0 then
       return Length(ListBlist([1 .. k - 1], active_cosets));
