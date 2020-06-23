@@ -4,18 +4,33 @@ ToddCoxeterBand := function(N, R)
   pair, char, coset;
 
   new_coset := function(coset, char)
-    # Print("Calling new_coset \n");
+    local new_word, pos, k;
+    # new_coset for bands is smart. If the word created, once reduced,
+    # is already somewhere else in the list, then it just sets
+    # table[coset][char] to be that coset.
     if table[coset][char] = 0 then
-      table[coset][char] := k;
-      active_cosets[k]   := true;
-      Add(table, ListWithIdenticalEntries(Length(A), 0));
-      Add(words, Concatenation(words[coset], [char]));
-      k := k + 1;
+      new_word := canon(Concatenation(words[coset], [char]));
+      pos      := Position(words, new_word);
+
+      if pos = fail then
+        # in this case the word is genuinely new and we make a new coset
+        table[coset][char] := k;
+        active_cosets[k]   := true;
+        Add(table, ListWithIdenticalEntries(Length(A), 0));
+        Add(words, new_word);
+        k := k + 1;
+
+      else
+        # word already exists
+        table[coset][char] := pos;
+
+      fi;
     fi;
   end;
 
   tauf := function(coset, word)
     local char;
+    # forced tau. This creates new cosets as necessary.
     if Length(word) = 0 then
       return coset;
     fi;
@@ -129,12 +144,12 @@ ToddCoxeterBand := function(N, R)
       od;
 
       # push the coset through every known implicit relation
-      for coset in ListBlist([1 .. k - 1], active_cosets{[1 .. k - 1]}) do
-        word := words[coset];
-        pair := [Concatenation(word, word), word];
-        push_relation(n, pair[1], pair[2]);
-        # process_coincidences();
-      od;
+      # for coset in ListBlist([1 .. k - 1], active_cosets{[1 .. k - 1]}) do
+      #   word := words[coset];
+      #   pair := [Concatenation(word, word), word];
+      #   push_relation(n, pair[1], pair[2]);
+      #   # process_coincidences();
+      # od;
 
     fi;
 
