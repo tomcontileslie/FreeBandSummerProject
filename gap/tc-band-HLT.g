@@ -4,7 +4,7 @@ ToddCoxeterBand := function(N, R)
   pair, char, coset;
 
   new_coset := function(coset, char)
-    local new_word, pos, k;
+    local new_word, pos;
     # new_coset for bands is smart. If the word created, once reduced,
     # is already somewhere else in the list, then it just sets
     # table[coset][char] to be that coset.
@@ -45,21 +45,11 @@ ToddCoxeterBand := function(N, R)
     return coset;
   end;
 
-  # uat := function(coset)
-  #   # now obsolete as full words are stored
-  #   # TODO delete me
-  #   local c, word;
-  #   c    := coset;
-  #   word := [];
-  #   while c > 1 do
-  #     Add(word, edges[c]);
-  #     c := parents[c];
-  #   od;
-  #   return Reversed(word);
-  # end;
-
   canon := function(word)
     # expresses a word in free band-canonical form.
+    if IsEmpty(word) then
+      return [];
+    fi;
     return Factorization(F, EvaluateWord(X, word));
   end;
 
@@ -80,34 +70,33 @@ ToddCoxeterBand := function(N, R)
     while Length(coincidences) <> 0 do
       i := Minimum(coincidences[1]);
       j := Maximum(coincidences[1]);
-      if i = j then
-        return;
-      fi;
-      for char in A do
-        if table[j][char] <> 0 then
-          if table[i][char] = 0 then
-            table[i][char] := table[j][char];
-          elif table[i][char] <> 0 then
-            Add(coincidences, [table[i][char], table[j][char]]);
-          fi;
-        fi;
-      od;
-      for coset in ListBlist([1 .. k - 1], active_cosets) do
+      if i <> j then
         for char in A do
-          if table[coset][char] = j then
-            table[coset][char] := i;
+          if table[j][char] <> 0 then
+            if table[i][char] = 0 then
+              table[i][char] := table[j][char];
+            elif table[i][char] <> 0 then
+              Add(coincidences, [table[i][char], table[j][char]]);
+            fi;
           fi;
         od;
-      od;
-      for pair in coincidences do
-        if pair[1] = j then
-          pair[1] := i;
-        fi;
-        if pair[2] = j then
-          pair[2] := i;
-        fi;
-      od;
-      active_cosets[j] := false;
+        for coset in ListBlist([1 .. k - 1], active_cosets) do
+          for char in A do
+            if table[coset][char] = j then
+              table[coset][char] := i;
+            fi;
+          od;
+        od;
+        for pair in coincidences do
+          if pair[1] = j then
+            pair[1] := i;
+          fi;
+          if pair[2] = j then
+            pair[2] := i;
+          fi;
+        od;
+        active_cosets[j] := false;
+      fi;
       Remove(coincidences, 1);
       # Unbind(parents[j]);
       # Unbind(edges[j]);
@@ -144,12 +133,10 @@ ToddCoxeterBand := function(N, R)
       od;
 
       # push the coset through every known implicit relation
-      # for coset in ListBlist([1 .. k - 1], active_cosets{[1 .. k - 1]}) do
-      #   word := words[coset];
-      #   pair := [Concatenation(word, word), word];
-      #   push_relation(n, pair[1], pair[2]);
-      #   # process_coincidences();
-      # od;
+      for word in ListBlist(words, active_cosets) do
+        pair := [canon(Concatenation(word, word)), word];
+        push_relation(n, pair[1], pair[2]);
+      od;
 
     fi;
 
@@ -163,8 +150,6 @@ ToddCoxeterBand := function(N, R)
       return Length(ListBlist([1 .. k - 1], active_cosets));
     fi;
   od;
-
-  Error();
 
   # if no relations have the empty word then this is not a monoid presentation.
   return Length(ListBlist([1 .. k - 1], active_cosets)) - 1;
