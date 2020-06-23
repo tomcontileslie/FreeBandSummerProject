@@ -5,7 +5,7 @@ ToddCoxeter := function(N, R)
 
   tau := function(coset, word)
     local char;
-    # Print("Calling tau. coset: ", coset, "  word: ", word, "\n");
+    # # Print("Calling tau. coset: ", coset, "  word: ", word, "\n");
     if not IsList(word) then
       word := [word];
     fi;
@@ -111,6 +111,9 @@ ToddCoxeter := function(N, R)
       od;
       active_cosets[j] := false;
       Remove(coincidences, 1);
+      Unbind(parents[j]);
+      Unbind(edges[j]);
+      Unbind(table[j]);
     od;
   end;
 
@@ -136,14 +139,22 @@ ToddCoxeter := function(N, R)
             # Print("Pushing relation ", pair, " on ", n, "\n");
             push_relation(coset, pair[1], pair[2]);
           od;
+          for pair in List(ListBlist([1 .. k - 1], active_cosets),
+              x -> [uat(x), Concatenation(uat(x), uat(x))]) do;
+            push_relation(coset, pair[1], pair[2]);
+          od;
         od;
       od;
     fi;
     # Print("Processing coincidences \n");
     process_coincidences();
     # Print("\n \n");
-  until n = k - 1;  # When we have reached the end of our active cosets, stop.
-  Error();
+    # Error("Reached end of loop");
+    if n mod 10 = 0 then
+      Print("n = ", n, "  |  k = ", k, "\n");
+    fi;
+  until n = k - 1;
+  # Error();
   for pair in R do
     if Length(pair[1]) = 0 or Length(pair[2]) = 0 then
       return Length(ListBlist([1 .. k - 1], active_cosets));
