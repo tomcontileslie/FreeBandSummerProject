@@ -1,6 +1,6 @@
 ToddCoxeterBand := function(N, R)
   local new_coset, tauf, canon, push_relation, process_coincidences,
-  A, F, X, k, active_cosets, table, coincidences, words, n, word,
+  A, F, G, k, active_cosets, table, coincidences, words, n, word,
   pair, char, coset;
 
   new_coset := function(coset, char)
@@ -50,7 +50,7 @@ ToddCoxeterBand := function(N, R)
     if IsEmpty(word) then
       return [];
     fi;
-    return Factorization(F, EvaluateWord(X, word));
+    return Factorization(F, EvaluateWord(G, word));
   end;
 
   push_relation := function(coset, u, v)
@@ -105,7 +105,7 @@ ToddCoxeterBand := function(N, R)
 
   A             := [1 .. N];
   F             := FreeBand(N);
-  X             := GeneratorsOfSemigroup(F);
+  G             := GeneratorsOfSemigroup(F);
   k             := 2;
   active_cosets := [true];
   table         := [[]];
