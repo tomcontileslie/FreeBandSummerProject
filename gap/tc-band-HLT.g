@@ -154,3 +154,24 @@ ToddCoxeterBand := function(N, R)
   # if no relations have the empty word then this is not a monoid presentation.
   return Length(ListBlist([1 .. k - 1], active_cosets)) - 1;
 end;
+
+# this function just helps generate sets of relations
+poprules2 := function(max, sample_pair)
+  local out, trans, i, j;
+  out   := [];
+  trans := function(n)
+    if n = 1 then
+      return i;
+    fi;
+    if n = 2 then
+      return j;
+    fi;
+  end;
+  for i in [1 .. max] do
+    for j in [1 .. max] do
+      Add(out, [List(sample_pair[1], x -> trans(x)),
+                List(sample_pair[2], x -> trans(x))]);
+    od;
+  od;
+  return out;
+end;
