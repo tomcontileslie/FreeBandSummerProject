@@ -63,24 +63,32 @@ ToddCoxeterBand := function(N, R)
   end;
 
   process_coincidences := function()
-    local i, j, char, coset, pair;
+    # changed to depth-first.
+    local i, j, char, coset, pair, current, counter;
     if Length(coincidences) = 0 then
       return;
     fi;
     while Length(coincidences) <> 0 do
-      i := Minimum(coincidences[1]);
-      j := Maximum(coincidences[1]);
+      # current := Length(coincidences);
+      current := 1;
+      i       := Minimum(coincidences[current]);
+      j       := Maximum(coincidences[current]);
+      if i = j then
+      fi;
+      counter := 0;
       if i <> j then
         for char in A do
           if table[j][char] <> 0 then
             if table[i][char] = 0 then
               table[i][char] := table[j][char];
             elif table[i][char] <> 0 then
+              counter := counter + 1;
               Add(coincidences, [table[i][char], table[j][char]]);
             fi;
           fi;
         od;
-        for coset in ListBlist([1 .. k - 1], active_cosets) do
+        # for coset in ListBlist([1 .. k - 1], active_cosets) do
+        for coset in [1 .. k - 1] do
           for char in A do
             if table[coset][char] = j then
               table[coset][char] := i;
@@ -97,7 +105,7 @@ ToddCoxeterBand := function(N, R)
         od;
         active_cosets[j] := false;
       fi;
-      Remove(coincidences, 1);
+      Remove(coincidences, current);
       # Unbind(parents[j]);
       # Unbind(edges[j]);
     od;
