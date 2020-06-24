@@ -50,7 +50,7 @@ ToddCoxeterBand := function(N, R)
     if IsEmpty(word) then
       return [];
     fi;
-    return Factorization(F, EvaluateWord(G, word));
+    return SEMIGROUPS.FreeBandElmToWord(EvaluateWord(G, word));
   end;
 
   push_relation := function(coset, u, v)
@@ -135,7 +135,7 @@ ToddCoxeterBand := function(N, R)
       # push the coset through every known implicit relation
       for word in ListBlist(words, active_cosets) do
         pair := [canon(Concatenation(word, word)), word];
-        push_relation(n, pair[1], pair[2]);
+        push_relation(n, canon(pair[1]), canon(pair[2]));
       od;
 
     fi;
