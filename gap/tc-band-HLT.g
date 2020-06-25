@@ -140,10 +140,17 @@ ToddCoxeterBand := function(N, R)
         push_relation(n, pair[1], pair[2]);
       od;
 
-      # push the coset through every known implicit relation
+      # push the current coset through every known implicit relation
       for word in ListBlist(words, active_cosets) do
         pair := [canon(Concatenation(word, word)), word];
-        push_relation(n, canon(pair[1]), canon(pair[2]));
+        push_relation(n, pair[1], pair[2]);  # word is already canonical
+      od;
+
+      # push every previous coset through the word of the current coset
+      word := words[n];
+      pair := [canon(Concatenation(word, word)), word];
+      for coset in ListBlist([1 .. n - 1], active_cosets{[1 .. n - 1]}) do
+        push_relation(coset, pair[1], pair[2]);
       od;
 
     fi;
