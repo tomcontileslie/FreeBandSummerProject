@@ -1,7 +1,7 @@
 ToddCoxeterBand := function(N, R)
-  local new_coset, tauf, canon, push_relation, process_coincidences,
-  A, F, G, k, active_cosets, table, coincidences, words, n, word,
-  pair, char, coset;
+  local new_coset, tauf, tau, canon, push_relation, process_coincidences,
+  A, F, G, k, active_cosets, table, coincidences, words, unmerged,
+  whenseen, n, prev, pair, t1, t2, char, word, i, t11, t22, waitcncs;
 
   new_coset := function(coset, char)
     local new_word, pos;
@@ -45,6 +45,21 @@ ToddCoxeterBand := function(N, R)
     return coset;
   end;
 
+  tau := function(coset, word)
+    local char;
+    # only for testing purposes
+    if Length(word) = 0 then
+      return coset;
+    fi;
+    for char in word do
+      coset := table[coset][char];
+      if coset = 0 then
+        return 0;
+      fi;
+    od;
+    return coset;
+  end;
+
   canon := function(word)
     # expresses a word in free band-canonical form.
     if IsEmpty(word) then
@@ -54,17 +69,25 @@ ToddCoxeterBand := function(N, R)
   end;
 
   push_relation := function(coset, u, v)
-    local ut, vt;
+    local ut, vt, ix;
     ut := tauf(coset, u);
     vt := tauf(coset, v);
     if ut <> vt then
       Add(coincidences, [ut, vt]);
+      ix := Position(waitcncs, Set([ut, vt]));
+      if not ix = fail then
+        Print("Pushing ", coset, " through relation ", u, ", ", v);
+        Print(" sorted unmerged edge e(", unmerged[ix][1], ", ");
+        Print(unmerged[ix][2], ")\n");
+        whenseen[ix] := true;
+        Error("As a result");
+      fi;
     fi;
   end;
 
   process_coincidences := function()
+    local current, i, j, ii, counter, triple, char, coset, pair;
     # changed to depth-first.
-    local i, j, char, coset, pair, current, counter;
     if Length(coincidences) = 0 then
       return;
     fi;
@@ -84,6 +107,7 @@ ToddCoxeterBand := function(N, R)
             elif table[i][char] <> 0 then
               counter := counter + 1;
               Add(coincidences, [table[i][char], table[j][char]]);
+              # TODO
             fi;
           fi;
         od;
@@ -108,6 +132,19 @@ ToddCoxeterBand := function(N, R)
       Remove(coincidences, current);
       # Unbind(parents[j]);
       # Unbind(edges[j]);
+
+      # renamed ii to avoid conflict
+      for ii in [1 .. Length(unmerged)] do
+        if not whenseen[ii] then
+          triple := unmerged[ii];
+          if tau(triple[1], triple[2]) = tau(triple[1], triple[3]) then
+            Print("e(", triple[1], ", ", triple[2], ") was merged");
+            Print(" in process coincidences\n");
+            whenseen[ii] := true;
+            Error();
+          fi;
+        fi;
+      od;
     od;
   end;
 
@@ -119,6 +156,9 @@ ToddCoxeterBand := function(N, R)
   table         := [[]];
   coincidences  := [];
   words         := [[]];
+  unmerged      := [];
+  whenseen      := [];
+  waitcncs      := [];
   for char in A do
     table[1][char] := 0;
   od;
@@ -126,6 +166,8 @@ ToddCoxeterBand := function(N, R)
   repeat
 
     n  := n + 1;
+
+    prev := ListBlist(words, active_cosets);
 
     # only do anything if the current coset is active
     if active_cosets[n] then
@@ -146,11 +188,32 @@ ToddCoxeterBand := function(N, R)
         push_relation(n, pair[1], pair[2]);  # word is already canonical
       od;
 
+      if n <> 1 then
+        for word in ListBlist(words, active_cosets) do
+          if not word in prev then
+            for i in [1 .. n] do
+              t1 := tau(i, word);
+              t2 := tau(i, Concatenation(word, word));
+              if t1 <> 0 and t2 <> 0 and t1 <> t2 then
+                t11 := Minimum(t1, t2);
+                t22 := Maximum(t1, t2);
+                Add(unmerged, [i, word, Concatenation(word, word)]);
+                Add(whenseen, false);
+                Add(waitcncs, [t11, t22]);
+                Print("Discovered unmerged edges e(", i, ", ", word, ")\n");
+                Error();
+              fi;
+            od;
+          fi;
+        od;
+      fi;
     fi;
 
     process_coincidences();
 
   until n = k - 1;
+
+  Error("reached end");
 
   for pair in R do
     if Length(pair[1]) = 0 or Length(pair[2]) = 0 then
@@ -180,6 +243,24 @@ poprules2 := function(max, sample_pair)
       Add(out, [List(sample_pair[1], x -> trans(x)),
                 List(sample_pair[2], x -> trans(x))]);
     od;
+  od;
+  return out;
+end;
+
+# another helper function
+# removes zeros from table to make a digraph compatible list
+rmz := function(table, active_zeros)
+  local out, i, j;
+  out := [];
+  for i in [1 .. Length(table)] do
+    Add(out, []);
+    if active_zeros[i] then
+      for j in [1 .. Length(table[i])] do
+        if table[i][j] <> 0 then
+          Add(out[i], table[i][j]);
+        fi;
+      od;
+    fi;
   od;
   return out;
 end;
