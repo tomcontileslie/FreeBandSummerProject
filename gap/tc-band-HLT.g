@@ -1,7 +1,7 @@
 ToddCoxeterBand := function(N, R)
   local new_coset, tauf, canon, push_relation, process_coincidences,
   A, F, G, k, active_cosets, table, coincidences, words, n, word,
-  pair, char, coset;
+  pair, char, coset, i;
 
   new_coset := function(coset, char)
     local new_word, pos;
@@ -141,9 +141,16 @@ ToddCoxeterBand := function(N, R)
       od;
 
       # push the current coset through every known implicit relation
-      for word in ListBlist(words, active_cosets) do
+      for word in words do
         pair := [Concatenation(word, word), word];
         push_relation(n, pair[1], pair[2]);  # word is already canonical
+      od;
+
+      # push every previous coset through the current implicit relation
+      word := words[n];
+      pair := [Concatenation(word, word), word];
+      for i in ListBlist([1 .. n - 1], active_cosets{[1 .. n - 1]}) do
+        push_relation(i, pair[1], pair[2]);
       od;
 
     fi;
