@@ -1,30 +1,151 @@
+# Read("freeband.g");
+
+BandPrefix := function(word, distinct)
+  local lookup, distinctf, L, out, i;
+  # returns a tuple with reduced prefix and last to appear first.
+  # TODO: DANGER: Not well foolproofed, depends on very sensible input.
+  lookup          := [];
+  lookup[word[1]] := 1;
+  distinctf       := 1;  # distinct found
+  L               := Length(word);
+  for i in [2 .. L] do
+    if not IsBound(lookup[word[i]]) then
+      distinctf := distinctf + 1;
+      if distinctf = distinct then
+        out := SL_Canon(word{[1 .. i - 1]});
+        Add(out, word[i]);
+        return out;
+      fi;
+      lookup[word[i]] := distinct;
+    fi;
+  od;
+end;
+
+BandChop := function(pref, suff)
+  local n1, n2, n, i;
+  # cancels as much as possible.
+  n1 := Length(pref);
+  n2 := Length(suff);
+  n  := Minimum(n1, n2);
+  for i in [0 .. n - 1] do
+    if pref{[n1 - n + i + 1 .. n1]} = suff{[1 .. n - i]} then
+      # if we're at the end (all of suff chopped) then stop
+      if n - i = n2 then
+        return pref;
+      fi;
+
+      # otherwise, attempt to chop more
+      return BandChop(pref, suff{[n - i + 1 .. n2]});
+    fi;
+  od;
+  # no chops possible, return
+  return Concatenation(pref, suff);
+end;
+
+SL_Canon := function(word)
+  local L, lookup, distinct, l1, l2, pref, suff, i, char;
+  # Shortlex canon. Experimental for now. Returns shortlex least rep.
+  L := Length(word);
+  if L = 0 then
+    return [];
+  elif L = 1 then
+    return word;
+  fi;
+
+  # first we need size of the alph. Re-use stuff from ListOfPos...
+  lookup          := [];
+  lookup[word[1]] := 1;
+  distinct        := 1;
+
+  for i in [2 .. L] do
+    if not IsBound(lookup[word[i]]) then
+      distinct        := distinct + 1;
+      lookup[word[i]] := distinct;
+    fi;
+  od;
+
+  if distinct = 1 then
+    # only one letter. Delete copies.
+    return [word[1]];
+  fi;
+
+  if distinct = 2 then
+    # then only the first and last letters matter. Need to know what letters
+    # are in.
+    if word[1] <> word[L] then
+      return [word[1], word[L]];
+    fi;
+    # otherwise the first and last are same. Need to know middle.
+    l1 := word[1];
+    for char in word do
+      if char <> l1 then
+        l2 := char;
+        return [l1, l2, l1];
+      fi;
+    od;
+  fi;
+
+  # If we've made it this far then the content is at least of size 3.
+  # Need to find prefix and suffix.
+  pref := BandPrefix(word, distinct);
+  suff := Reversed(BandPrefix(Reversed(word), distinct));
+
+  # now cancel as much as possible.
+  return BandChop(pref, suff);
+end;
+
 ToddCoxeterBand := function(N, R)
   local new_coset, tauf, canon, push_relation, process_coincidences,
   A, F, G, k, active_cosets, table, coincidences, words, n, word,
-  pair, char, coset, i;
+  pair, char, coset, i, tau;
 
   new_coset := function(coset, char)
-    local new_word, pos;
+    local new_word, target, cosetm, charm, pword;
     # new_coset for bands is smart. If the word created, once reduced,
     # is already somewhere else in the list, then it just sets
     # table[coset][char] to be that coset.
+    # TODO change the above comment.
     if table[coset][char] = 0 then
       new_word := canon(Concatenation(words[coset], [char]));
-      pos      := Position(words, new_word);
+      target   := tau(1, new_word);
 
-      if pos = fail then
-        # in this case the word is genuinely new and we make a new coset
-        table[coset][char] := k;
-        active_cosets[k]   := true;
-        Add(table, ListWithIdenticalEntries(Length(A), 0));
-        Add(words, new_word);
-        k := k + 1;
+      if target = 0 then
+        # in this case following new_word from empty word does not lead us the
+        # full way and we need to define more cosets.
+        # Need to follow word again to see how far we got before undefined.
+        cosetm := 1;
+        pword  := [];  # partial word, add letters to it each time
+        for charm in new_word do
+          # extend partial word
+          Add(pword, charm);
+          if table[cosetm][charm] = 0 then
+            # Error("woop defining");
+            # edge is undefined, define a new one.
+            table[cosetm][charm] := k;
+            # if k = 45 then
+            #   Error("ooo");
+            # fi;
+            active_cosets[k]     := true;
+            Add(table, ListWithIdenticalEntries(Length(A), 0));
+            Add(words, canon(pword));
+            # we need to re-canonicalise pword at the moment because canon does
+            # not always output the shortlex-least word.
+            k := k + 1;
+          fi;
+          # Error("idk if woop but incrementing cosetm");
+          cosetm := table[cosetm][charm];
+        od;
+
+        # now we've defined all the intermediate words, get the original
+        # request to point in the right place.
+        table[coset][char] := k - 1;  # k had been incremented 1 too many
 
       else
-        # word already exists
-        table[coset][char] := pos;
-
+        # in this case following new_word led us somewhere and we should
+        # point there
+        table[coset][char] := target;
       fi;
+      # Error("new coset done");
     fi;
   end;
 
@@ -39,6 +160,21 @@ ToddCoxeterBand := function(N, R)
         # if the product is undefined, define it, and start coset back up
         # at the newly defined value (k-1).
         new_coset(coset, char);
+      fi;
+      coset := table[coset][char];
+    od;
+    return coset;
+  end;
+
+  tau := function(coset, word)
+    local char;
+    # non-forced tau, checks whether you can get the whole way.
+    if Length(word) = 0 then
+      return coset;
+    fi;
+    for char in word do
+      if table[coset][char] = 0 then
+        return 0;
       fi;
       coset := table[coset][char];
     od;
@@ -123,6 +259,9 @@ ToddCoxeterBand := function(N, R)
     table[1][char] := 0;
   od;
   n := 0;
+
+  Error();
+
   repeat
 
     n  := n + 1;
