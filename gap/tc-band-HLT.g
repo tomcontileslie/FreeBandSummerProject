@@ -119,12 +119,8 @@ ToddCoxeterBand := function(N, R)
           # extend partial word
           Add(pword, charm);
           if table[cosetm][charm] = 0 then
-            # Error("woop defining");
             # edge is undefined, define a new one.
             table[cosetm][charm] := k;
-            # if k = 45 then
-            #   Error("ooo");
-            # fi;
             active_cosets[k]     := true;
             Add(table, ListWithIdenticalEntries(Length(A), 0));
             Add(words, canon(pword));
@@ -132,7 +128,6 @@ ToddCoxeterBand := function(N, R)
             # not always output the shortlex-least word.
             k := k + 1;
           fi;
-          # Error("idk if woop but incrementing cosetm");
           cosetm := table[cosetm][charm];
         od;
 
@@ -145,7 +140,6 @@ ToddCoxeterBand := function(N, R)
         # point there
         table[coset][char] := target;
       fi;
-      # Error("new coset done");
     fi;
   end;
 
@@ -182,7 +176,10 @@ ToddCoxeterBand := function(N, R)
   end;
 
   canon := function(word)
+    # TODO: this calls a function defined further up as a replacement for the
+    # previous version of canon.
     # expresses a word in free band-canonical form.
+    return SL_Canon(word);
     if IsEmpty(word) then
       return [];
     fi;
@@ -259,8 +256,6 @@ ToddCoxeterBand := function(N, R)
     table[1][char] := 0;
   od;
   n := 0;
-
-  Error();
 
   repeat
 
